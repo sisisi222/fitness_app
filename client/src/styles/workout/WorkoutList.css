@@ -1,0 +1,77 @@
+/* WorkoutList.css */
+
+.workout-list-container {
+    width: 100%;
+    max-width: 600px; /* Increased a bit for better spacing */
+    margin: 30px auto; /* Increased margin */
+    padding: 25px; /* Increased padding for more space inside */
+    border: 1px solid #dcdcdc;
+    border-radius: 8px; /* Increased border-radius for a more rounded look */
+    box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.1);
+    background-color: #f9f9f9;
+}
+
+.workout-list-container h2 {
+    margin-top: 0;
+    margin-bottom: 25px; /* Increased margin-bottom */
+    text-align: center;
+    font-size: 1.8em; /* Increased font size for title */
+    color: #2c2c2c; /* Darkened the color a bit */
+}
+
+.workout-list-container ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+.workout-list-container li {
+    padding: 15px; /* Increased padding */
+    border-bottom: 1px solid #dcdcdc;
+    font-size: 1.2em; /* Increased font size */
+    font-weight: 500; /* Made it a bit bolder */
+    color: #444; /* Darkened the color a bit for better readability */
+    transition: background-color 0.3s ease;
+    border-radius: 4px; /* Added border-radius */
+    margin-bottom: 8px; /* Added margin for better spacing between items */
+}
+
+.workout-list-container li:hover {
+    background-color: #e0e0e0; /* Changed to a slightly lighter color for a more subtle hover effect */
+}
+
+.workout-list-container li:last-child {
+    border-bottom: none;
+}
+
+h3 {
+    font-size: 3rem;
+}
+
+
+
+/* .workout-list {
+    margin-top: 20px;
+}
+
+.workout-item {
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.edit-button {
+    padding: 5px 10px;
+    background-color: #4caf50;
+    color: #fff;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.edit-button:hover {
+    background-color: #388e3c;
+} */

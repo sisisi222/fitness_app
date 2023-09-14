@@ -1,0 +1,7 @@
+.home-container {
+    font-family: Arial, sans-serif;
+    background-color: #ee0000;
+    display: block; /* Ensures it's a block-level element */
+    width: 100vw;
+    box-sizing: border-box; /* Ensures padding and border are included in the total width */
+}
