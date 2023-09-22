@@ -25,3 +25,9 @@
 .add-workout-button:hover {
     background-color: #0056b3;
 }
+
+div {
+    box-sizing: border-box;
+    height: fit-content;
+  }
+  

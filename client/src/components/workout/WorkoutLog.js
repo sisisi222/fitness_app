@@ -2,18 +2,18 @@ import React, { useState, useEffect } from 'react';
 import AddWorkout from './AddWorkout';
 import EditWorkout from './EditWorkout';
 import WorkoutList from './WorkoutList';
-import '../../styles/workout/WorkoutLog.css'
+import '../../styles/workout/WorkoutLog.css';
 
-function WorkoutLog({ userId }) {  // Extract the userId here
+function WorkoutLog({ userId }) {
     const [workouts, setWorkouts] = useState([]);
-    const [selectedWorkoutId, setSelectedWorkoutId] = useState(null);
+    const [selectedWorkout, setSelectedWorkout] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     useEffect(() => {
         async function fetchWorkouts() {
             try {
-                const response = await fetch('http://localhost:5000/api/workouts');
+                const response = await fetch(`http://localhost:5000/api/workouts/user/${userId}`);
                 if (!response.ok) {
                     throw new Error('Failed to fetch workouts');
                 }
@@ -27,18 +27,29 @@ function WorkoutLog({ userId }) {  // Extract the userId here
         }
 
         fetchWorkouts();
-    }, []);
+    }, [userId]);
 
     const handleAddSuccess = (newWorkout) => {
         setWorkouts([...workouts, newWorkout]);
+        console.log("New workout added:", newWorkout);
     };
 
     const handleEditSuccess = (updatedWorkout) => {
+        console.log("Handling Edit with Data:", updatedWorkout);
         const updatedWorkouts = workouts.map(workout =>
             workout.id === updatedWorkout.id ? updatedWorkout : workout
         );
-        setWorkouts(updatedWorkouts);
-        setSelectedWorkoutId(null); // Close the edit form
+        setWorkouts([...updatedWorkouts]);
+    };
+
+    const handleEditRequest = (workoutId) => {
+        const workoutToEdit = workouts.find(workout => workout.id === workoutId);
+        setSelectedWorkout(workoutToEdit);
+    };
+
+    const handleDeleteSuccess = (workoutId) => {
+        const remainingWorkouts = workouts.filter(workout => workout.id !== workoutId);
+        setWorkouts(remainingWorkouts);
     };
 
     if (loading) return <p>Loading...</p>;
@@ -50,18 +61,20 @@ function WorkoutLog({ userId }) {  // Extract the userId here
             
             <AddWorkout onAddSuccess={handleAddSuccess} userId={userId} />
 
-            {selectedWorkoutId ? (
+            <WorkoutList
+                workouts={workouts}
+                onEditRequest={handleEditRequest}
+                onDeleteRequest={handleDeleteSuccess} 
+            />
+
+            {selectedWorkout && (
                 <EditWorkout
-                    workoutId={selectedWorkoutId}
+                    workout={selectedWorkout}
                     userId={userId}
                     onUpdateSuccess={handleEditSuccess}
                 />
-            ) : null}
-
-            <WorkoutList
-                workouts={workouts}
-                onEditRequest={setSelectedWorkoutId}
-            />
+            )}
+            
         </div>
     );
 }

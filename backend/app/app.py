@@ -17,29 +17,112 @@ bcrypt = Bcrypt(app)
 class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
-    first_name = db.Column(db.String(120), nullable=False)
-    last_name = db.Column(db.String(120), nullable=False)
-    phone_number = db.Column(db.String(15), unique=True, nullable=True)
-    username = db.Column(db.String(120), unique=True, nullable=False)
+    first_name = db.Column(db.String(255), nullable=False)
+    last_name = db.Column(db.String(255), nullable=False)
+    phone_number = db.Column(db.String(15))
+    username = db.Column(db.String(255), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
-
-class Workout(db.Model):
-    __tablename__ = 'workouts'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(120), nullable=False)
-    date = db.Column(db.Date, nullable=False)
-    duration = db.Column(db.Integer)  # Duration in minutes
-    repetitions = db.Column(db.Integer)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
     def serialize(self):
         return {
             'id': self.id,
-            'name': self.name,
-            'date': self.date.isoformat(),
-            'duration': self.duration,
-            'repetitions': self.repetitions
+            'first_name': self.first_name,
+            'last_name': self.last_name,
+            'phone_number': self.phone_number,
+            'username': self.username
         }
+
+class Workout(db.Model):
+    __tablename__ = 'workouts'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String, nullable=True)  # Adding the new name column
+    date = db.Column(db.Date, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    exercise_type_id = db.Column(db.Integer, db.ForeignKey('exercise_types.id'), nullable=False)
+    
+    aerobic_detail = db.relationship('AerobicDetail', uselist=False, backref='workout', cascade='all, delete-orphan')
+    cardio_detail = db.relationship('CardioDetail', uselist=False, backref='workout', cascade='all, delete-orphan')
+    weight_training_detail = db.relationship('WeightTrainingDetail', uselist=False, backref='workout', cascade='all, delete-orphan')
+
+
+    def serialize(self):
+        data = {
+            'id': self.id,
+            'name': self.name,  # Added this line to include the name in serialization
+            'date': self.date.isoformat(),
+            'user_id': self.user_id,
+            'exercise_type_id': self.exercise_type_id
+        }
+
+        # Append the specific exercise details based on the exercise type
+        if self.exercise_type_id == 1:  # Assuming 1 corresponds to aerobic
+            data['details'] = self.aerobic_detail.serialize() if self.aerobic_detail else None
+        elif self.exercise_type_id == 2:  # Assuming 2 corresponds to cardio
+            data['details'] = self.cardio_detail.serialize() if self.cardio_detail else None
+        elif self.exercise_type_id == 3:  # Assuming 3 corresponds to weight_training
+            data['details'] = self.weight_training_detail.serialize() if self.weight_training_detail else None
+
+        return data
+
+class ExerciseType(db.Model):
+    __tablename__ = 'exercise_types'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(255), unique=True, nullable=False)
+
+    def serialize(self):
+        return {
+            'id': self.id,
+            'name': self.name
+        }
+
+class AerobicDetail(db.Model):
+    __tablename__ = 'aerobic_details'
+    workout_id = db.Column(db.Integer, db.ForeignKey('workouts.id'), primary_key=True)
+    activity_name = db.Column(db.String(255), nullable=False)
+    duration = db.Column(db.Integer)
+    speed = db.Column(db.Float)
+
+    def serialize(self):
+        return {
+            'workout_id': self.workout_id,
+            'activity_name': self.activity_name,
+            'duration': self.duration,
+            'speed': self.speed
+        }
+        
+
+class CardioDetail(db.Model):
+    __tablename__ = 'cardio_details'
+    workout_id = db.Column(db.Integer, db.ForeignKey('workouts.id'), primary_key=True)
+    machine_name = db.Column(db.String(255), nullable=False)
+    time_duration = db.Column(db.Integer)
+    distance = db.Column(db.Float)
+
+    def serialize(self):
+        return {
+            'workout_id': self.workout_id,
+            'machine_name': self.machine_name,
+            'time_duration': self.time_duration,
+            'distance': self.distance
+        }
+
+class WeightTrainingDetail(db.Model):
+    __tablename__ = 'weight_training_details'
+    workout_id = db.Column(db.Integer, db.ForeignKey('workouts.id'), primary_key=True)
+    exercise_name = db.Column(db.String(255), nullable=False)
+    reps = db.Column(db.Integer)
+    sets = db.Column(db.Integer)
+    weight = db.Column(db.Float)
+
+    def serialize(self):
+        return {
+            'workout_id': self.workout_id,
+            'exercise_name': self.exercise_name,
+            'reps': self.reps,
+            'sets': self.sets,
+            'weight': self.weight
+        }
+
 
 # Routes
 @app.route('/api/register', methods=['POST'])
@@ -77,53 +160,192 @@ def login():
         return jsonify({'message': 'Logged in successfully', 'id': user.id}), 200  # Include user's ID in the response
     return jsonify({'message': 'Invalid credentials'}), 401
 
-
-@app.route('/api/workouts', methods=['GET'])
-def get_all_workouts():
-    workouts = Workout.query.all()
-    return jsonify([workout.serialize() for workout in workouts]), 200
+# Routes for workouts
+# # For add workout
 
 @app.route('/api/workouts', methods=['POST'])
 def add_workout():
     data = request.get_json()
-    workout = Workout(
-        name=data['name'],
-        date=data['date'],
-        duration=data['duration'],
-        repetitions=data['repetitions'],
-        user_id=data['user_id']
-    )
+    
+    # Validate base fields
+    name = data.get('name')
+    date = data.get('date')
+    user_id = data.get('user_id')
+    exercise_type_id = data.get('exercise_type_id')
+
+    if not all([name, date, user_id, exercise_type_id]):
+        return jsonify({'error': 'One of the base fields is missing'}), 400
+
+    workout = Workout(name=name, date=date, user_id=user_id, exercise_type_id=exercise_type_id)
     db.session.add(workout)
+    db.session.flush()  # flush to get the id of the newly created workout
+
+    exercise_details = data.get('exercise_details', {})
+    
+    if exercise_type_id == 1:  # Aerobic
+        activity_name = exercise_details.get('activity_name')
+        duration = exercise_details.get('duration')
+        speed = exercise_details.get('speed')
+
+        if not all([activity_name, duration, speed]):
+            return jsonify({'error': 'Aerobic details are incomplete'}), 400
+
+        aerobic_detail = AerobicDetail(workout_id=workout.id, activity_name=activity_name, duration=duration, speed=speed)
+        db.session.add(aerobic_detail)
+
+    elif exercise_type_id == 2:  # Cardio
+        machine_name = exercise_details.get('machine_name')
+        time_duration = exercise_details.get('time_duration')
+        distance = exercise_details.get('distance')
+
+        if not all([machine_name, time_duration, distance]):
+            return jsonify({'error': 'Cardio details are incomplete'}), 400
+
+        cardio_detail = CardioDetail(workout_id=workout.id, machine_name=machine_name, time_duration=time_duration, distance=distance)
+        db.session.add(cardio_detail)
+
+    elif exercise_type_id == 3:  # Weight Training
+        exercise_name = exercise_details.get('exercise_name')
+        reps = exercise_details.get('reps')
+        sets = exercise_details.get('sets')
+        weight = exercise_details.get('weight')
+
+        if not all([exercise_name, reps, sets, weight]):
+            return jsonify({'error': 'Weight Training details are incomplete'}), 400
+
+        weight_training_detail = WeightTrainingDetail(workout_id=workout.id, exercise_name=exercise_name, reps=reps, sets=sets, weight=weight)
+        db.session.add(weight_training_detail)
+
     db.session.commit()
-    return jsonify({'message': 'Workout added successfully'}), 201
+    return jsonify({'message': 'Workout added successfully', 'workout': workout.serialize()}), 201
 
-@app.route('/api/workouts/<int:user_id>', methods=['GET'])
-def get_workouts(user_id):
-    workouts = Workout.query.filter_by(user_id=user_id).all()
-    return jsonify([workout.serialize() for workout in workouts]), 200
 
+#For edit workout
 @app.route('/api/workouts/<int:workout_id>', methods=['PUT'])
 def edit_workout(workout_id):
-    data = request.get_json()
-    workout = Workout.query.get(workout_id)
-    if not workout:
-        return jsonify({'message': 'Workout not found'}), 404
+    try:
+        data = request.get_json()
+        workout = Workout.query.get(workout_id)
 
-    for field, value in data.items():
-        setattr(workout, field, value)
+        if not workout:
+            return jsonify({'message': 'Workout not found'}), 404
 
-    db.session.commit()
-    return jsonify({'message': 'Workout updated successfully'}), 200
+        # Update the basic workout details
+        workout.name = data['name']
+        workout.date = data['date']
+
+        # Depending on the previous exercise_type_id, delete the detail
+        if workout.exercise_type_id != data['exercise_type_id']:
+            if workout.exercise_type_id == 1 and workout.aerobic_detail:
+                db.session.delete(workout.aerobic_detail)
+            elif workout.exercise_type_id == 2 and workout.cardio_detail:
+                db.session.delete(workout.cardio_detail)
+            elif workout.exercise_type_id == 3 and workout.weight_training_detail:
+                db.session.delete(workout.weight_training_detail)
+
+            workout.exercise_type_id = data['exercise_type_id']
+
+        # Depending on the new exercise_type_id, add or update the relevant detail table
+        if data['exercise_type_id'] == 1:
+            if workout.aerobic_detail:
+                workout.aerobic_detail.activity_name = data['activity_name']
+                workout.aerobic_detail.duration = data['duration']
+                workout.aerobic_detail.speed = data['speed']
+            else:
+                aerobic_detail = AerobicDetail(
+                    workout_id=workout.id,
+                    activity_name=data['activity_name'],
+                    duration=data['duration'],
+                    speed=data['speed']
+                )
+                db.session.add(aerobic_detail)
+
+        elif data['exercise_type_id'] == 2:
+            if workout.cardio_detail:
+                workout.cardio_detail.machine_name = data['machine_name']
+                workout.cardio_detail.time_duration = data['time_duration']
+                workout.cardio_detail.distance = data['distance']
+            else:
+                cardio_detail = CardioDetail(
+                    workout_id=workout.id,
+                    machine_name=data['machine_name'],
+                    time_duration=data['time_duration'],
+                    distance=data['distance']
+                )
+                db.session.add(cardio_detail)
+
+        elif data['exercise_type_id'] == 3:
+            if workout.weight_training_detail:
+                workout.weight_training_detail.exercise_name = data['exercise_name']
+                workout.weight_training_detail.reps = data['reps']
+                workout.weight_training_detail.sets = data['sets']
+                workout.weight_training_detail.weight = data['weight']
+            else:
+                weight_training_detail = WeightTrainingDetail(
+                    workout_id=workout.id,
+                    exercise_name=data['exercise_name'],
+                    reps=data['reps'],
+                    sets=data['sets'],
+                    weight=data['weight']
+                )
+                db.session.add(weight_training_detail)
+
+        db.session.commit()
+        # Assuming `workout.serialize()` is a method that converts the workout and its details to a dictionary
+        return jsonify(workout.serialize()), 200
+    except Exception as e:
+        print(f"Error updating workout: {e}")
+        db.session.rollback()  # Make sure to rollback any changes in case of errors
+        return jsonify({'message': 'Failed to update workout'}), 500
 
 @app.route('/api/workouts/<int:workout_id>', methods=['DELETE'])
 def delete_workout(workout_id):
     workout = Workout.query.get(workout_id)
+
     if not workout:
         return jsonify({'message': 'Workout not found'}), 404
 
     db.session.delete(workout)
     db.session.commit()
+
     return jsonify({'message': 'Workout deleted successfully'}), 200
+
+@app.route('/api/workouts/user/<int:user_id>', methods=['GET'])
+def get_workouts_by_user(user_id):
+    # Retrieve workouts by user_id
+    workouts = Workout.query.filter_by(user_id=user_id).all()
+
+    # Convert workouts to dictionary including details based on exercise_type_id
+    workout_data = []
+    for workout in workouts:
+        serialized_workout = workout.serialize()  # Assuming you have a `serialize` method on Workout model
+
+        # Add details based on exercise type
+        if workout.exercise_type_id == 1 and workout.aerobic_detail:
+            serialized_workout['details'] = {
+                'activity_name': workout.aerobic_detail.activity_name,
+                'duration': workout.aerobic_detail.duration,
+                'speed': workout.aerobic_detail.speed
+            }
+        elif workout.exercise_type_id == 2 and workout.cardio_detail:
+            serialized_workout['details'] = {
+                'machine_name': workout.cardio_detail.machine_name,
+                'time_duration': workout.cardio_detail.time_duration,
+                'distance': workout.cardio_detail.distance
+            }
+        elif workout.exercise_type_id == 3 and workout.weight_training_detail:
+            serialized_workout['details'] = {
+                'exercise_name': workout.weight_training_detail.exercise_name,
+                'reps': workout.weight_training_detail.reps,
+                'sets': workout.weight_training_detail.sets,
+                'weight': workout.weight_training_detail.weight
+            }
+        workout_data.append(serialized_workout)
+
+    return jsonify(workout_data), 200
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
+
+
+

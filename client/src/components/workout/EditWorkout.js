@@ -1,104 +1,181 @@
 import React, { useState, useEffect } from 'react';
-import '../../styles/workout/EditWorkout.css'
+import '../../styles/workout/EditWorkout.css';
 
-function EditWorkout({ workoutId, userId, onUpdateSuccess }) {
-    const [workoutData, setWorkoutData] = useState({
-        name: '',
-        date: '',
-        duration: '',
-        repetitions: '',
-        user_id: userId ? userId : null  // Use userId from the prop
+function EditWorkout({ workout, userId, onUpdateSuccess }) {
+    // Base workout fields with default initialization
+    const [editedWorkout, setEditedWorkout] = useState({
+        ...workout,
+        name: workout.name || '',
+        date: workout.date || new Date().toISOString().substr(0, 10),
+        exercise_type_id: workout.exercise_type_id || 1, // Defaulting to 'Aerobic' as an example
+        activity_name: workout.activity_name || '',
+        duration: workout.duration || 0,
+        speed: workout.speed || 0,
+        machine_name: workout.machine_name || '',
+        time_duration: workout.time_duration || 0,
+        distance: workout.distance || 0,
+        exercise_name: workout.exercise_name || '',
+        reps: workout.reps || 0,
+        sets: workout.sets || 0,
+        weight: workout.weight || 0
     });
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
 
-    useEffect(() => {
-        async function fetchData() {
-            try {
-                const response = await fetch(`http://localhost:5000/api/workouts/${workoutId}`);
-                if (!response.ok) {
-                    throw new Error('Failed to fetch workout details');
-                }
-                const data = await response.json();
-                setWorkoutData(data);
-                setLoading(false);
-            } catch (err) {
-                setError(err.message);
-                setLoading(false);
-            }
-        }
-
-        fetchData();
-    }, [workoutId]);
-
-    const handleChange = e => {
-        setWorkoutData({ ...workoutData, [e.target.name]: e.target.value });
+    const handleChange = (field) => (event) => {
+        setEditedWorkout(prevState => ({
+            ...prevState,
+            [field]: event.target.type === 'number' ? parseFloat(event.target.value) : event.target.value
+        }));
     };
 
-    const handleSubmit = async e => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-
         try {
-            const response = await fetch(`http://localhost:5000/api/workouts/${workoutId}`, {
+            const response = await fetch(`http://localhost:5000/api/workouts/${workout.id}`, {
                 method: 'PUT',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(workoutData)
+                body: JSON.stringify(editedWorkout),
             });
 
             if (!response.ok) {
-                throw new Error('Failed to update workout');
+                throw new Error('Failed to update workout.');
             }
 
             const updatedWorkout = await response.json();
-            if (onUpdateSuccess) {
+            console.log("Updated Workout from Server:", updatedWorkout);
+
+            if (updatedWorkout.id) {
                 onUpdateSuccess(updatedWorkout);
+            } else {
+                console.error("API response is not as expected or workout update failed.");
             }
 
-        } catch (err) {
-            setError(err.message);
+        } catch (error) {
+            console.error('Error updating workout:', error);
         }
     };
 
-    if (loading) return <p>Loading...</p>;
-    if (error) return <p>Error: {error}</p>;
-
+    const handleExerciseTypeChange = (event) => {
+        const newExerciseTypeId = parseInt(event.target.value, 10);
+        let resetDetails = {};
+    
+        switch (newExerciseTypeId) {
+            case 1: // Aerobic
+                resetDetails = {
+                    activity_name: '',
+                    duration: 0,
+                    speed: 0,
+                };
+                break;
+            case 2: // Cardio
+                resetDetails = {
+                    machine_name: '',
+                    time_duration: 0,
+                    distance: 0,
+                };
+                break;
+            case 3: // WeightTraining
+                resetDetails = {
+                    exercise_name: '',
+                    reps: 0,
+                    sets: 0,
+                    weight: 0,
+                };
+                break;
+            default:
+                console.error("Unknown exercise type ID!");
+        }
+    
+        setEditedWorkout(prevState => ({
+            ...prevState,
+            ...resetDetails,
+            exercise_type_id: newExerciseTypeId,
+        }));
+    };
+    
     return (
         <div>
             <h2>Edit Workout</h2>
             <form onSubmit={handleSubmit}>
-                <input 
-                    type="text" 
-                    name="name" 
-                    placeholder="Exercise Name" 
-                    value={workoutData.name}
-                    onChange={handleChange}
-                />
-                <input 
-                    type="date" 
-                    name="date" 
-                    value={workoutData.date}
-                    onChange={handleChange}
-                />
-                <input 
-                    type="number" 
-                    name="duration" 
-                    placeholder="Duration (in minutes)"
-                    value={workoutData.duration}
-                    onChange={handleChange}
-                />
-                <input 
-                    type="number" 
-                    name="repetitions" 
-                    placeholder="Repetitions"
-                    value={workoutData.repetitions}
-                    onChange={handleChange}
-                />
+                <label>
+                    Name:
+                    <input type="text" value={editedWorkout.name} onChange={handleChange('name')} />
+                </label>
+                
+                <label>
+                    Date:
+                    <input type="date" value={editedWorkout.date} onChange={handleChange('date')} />
+                </label>
+    
+                <label>
+                    Exercise Type:
+                    <select value={editedWorkout.exercise_type_id} onChange={handleExerciseTypeChange}>
+                        <option value="1">Aerobic</option>
+                        <option value="2">Cardio</option>
+                        <option value="3">Weight Training</option>
+                    </select>
+                </label>
+    
+                {editedWorkout.exercise_type_id == 1 && (
+                    <>
+                        <label>
+                            Activity Name:
+                            <input type="text" value={editedWorkout.activity_name} onChange={handleChange('activity_name')} />
+                        </label>
+                        <label>
+                            Duration:
+                            <input type="number" value={editedWorkout.duration} onChange={handleChange('duration')} />
+                        </label>
+                        <label>
+                            Speed:
+                            <input type="number" value={editedWorkout.speed} onChange={handleChange('speed')} step="0.1" />
+                        </label>
+                    </>
+                )}
+    
+                {editedWorkout.exercise_type_id == 2 && (
+                    <>
+                        <label>
+                            Machine Name:
+                            <input type="text" value={editedWorkout.machine_name} onChange={handleChange('machine_name')} />
+                        </label>
+                        <label>
+                            Time Duration:
+                            <input type="number" value={editedWorkout.time_duration} onChange={handleChange('time_duration')} />
+                        </label>
+                        <label>
+                            Distance:
+                            <input type="number" value={editedWorkout.distance} onChange={handleChange('distance')} step="0.1" />
+                        </label>
+                    </>
+                )}
+    
+                {editedWorkout.exercise_type_id == 3 && (
+                    <>
+                        <label>
+                            Exercise Name:
+                            <input type="text" value={editedWorkout.exercise_name} onChange={handleChange('exercise_name')} />
+                        </label>
+                        <label>
+                            Reps:
+                            <input type="number" value={editedWorkout.reps} onChange={handleChange('reps')} />
+                        </label>
+                        <label>
+                            Sets:
+                            <input type="number" value={editedWorkout.sets} onChange={handleChange('sets')} />
+                        </label>
+                        <label>
+                            Weight (in kg):
+                            <input type="number" value={editedWorkout.weight} onChange={handleChange('weight')} step="0.1" />
+                        </label>
+                    </>
+                )}
+    
                 <button type="submit">Update Workout</button>
             </form>
         </div>
-    );
+    );    
 }
 
 export default EditWorkout;
