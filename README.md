@@ -1,6 +1,6 @@
 # Fitness Tracker Website
 
-Welcome to the Fitness Tracker website! This web application is designed to help users track their fitness progress, set personalized goals, and achieve a healthier lifestyle. It incorporates a range of features to enhance the fitness journey of its users.
+Welcome to the Fitness Tracker website! This is one of my personal projects. This web application is designed to help users track their fitness progress, set personalized goals, and achieve a healthier lifestyle. It incorporates a range of features to enhance the fitness journey of its users.
 
 ## Table of Contents
 
