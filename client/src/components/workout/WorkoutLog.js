@@ -40,6 +40,7 @@ function WorkoutLog({ userId }) {
             workout.id === updatedWorkout.id ? updatedWorkout : workout
         );
         setWorkouts([...updatedWorkouts]);
+        setSelectedWorkout(null); //Hide the edit table after sucessfully edit
     };
 
     const handleEditRequest = (workoutId) => {

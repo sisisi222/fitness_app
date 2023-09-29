@@ -7,7 +7,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
-
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:fitness123@fitness-db.cq9mmougyxan.us-east-2.rds.amazonaws.com:5432/fitness_db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
@@ -90,7 +90,6 @@ class AerobicDetail(db.Model):
             'speed': self.speed
         }
         
-
 class CardioDetail(db.Model):
     __tablename__ = 'cardio_details'
     workout_id = db.Column(db.Integer, db.ForeignKey('workouts.id'), primary_key=True)
@@ -123,6 +122,47 @@ class WeightTrainingDetail(db.Model):
             'weight': self.weight
         }
 
+class Weight(db.Model):
+    __tablename__ = 'weight'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    date = db.Column(db.Date, nullable=False)
+    weight_value = db.Column(db.Float, nullable=False)
+
+    user = db.relationship('User', backref=db.backref('weights', lazy=True))
+
+    def serialize(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'date': self.date,
+            'weight_value': self.weight_value
+        }
+
+class BodyMeasurement(db.Model):
+    __tablename__ = 'body_measurements'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    date = db.Column(db.Date, nullable=False)
+    waist = db.Column(db.Float)
+    chest = db.Column(db.Float)
+    arms = db.Column(db.Float)
+    legs = db.Column(db.Float)
+    hip = db.Column(db.Float)
+
+    user = db.relationship('User', backref=db.backref('body_measurements', lazy=True))
+
+    def serialize(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'date': self.date,
+            'waist': self.waist,
+            'chest': self.chest,
+            'arms': self.arms,
+            'legs': self.legs,
+            'hip': self.hip
+        }
 
 # Routes
 @app.route('/api/register', methods=['POST'])
@@ -218,7 +258,6 @@ def add_workout():
 
     db.session.commit()
     return jsonify({'message': 'Workout added successfully', 'workout': workout.serialize()}), 201
-
 
 #For edit workout
 @app.route('/api/workouts/<int:workout_id>', methods=['PUT'])
@@ -343,6 +382,76 @@ def get_workouts_by_user(user_id):
         workout_data.append(serialized_workout)
 
     return jsonify(workout_data), 200
+
+
+
+
+
+
+
+
+# FOR WEIGHT
+
+@app.route('/api/weight', methods=['POST'])
+def add_weight():
+    data = request.get_json()
+    
+    new_weight = Weight(
+        user_id=data['user_id'],
+        date=data['date'],
+        weight_value=data['weight_value']
+    )
+
+    db.session.add(new_weight)
+    db.session.commit()
+
+    return jsonify({'message': 'Weight added successfully!', 'weight': new_weight.serialize()}), 201
+
+@app.route('/api/weight/user/<int:user_id>', methods=['GET'])
+def get_all_weights(user_id):
+    weights = Weight.query.filter_by(user_id=user_id).all()
+    return jsonify([weight.serialize() for weight in weights]), 200
+
+@app.route('/api/weight/<int:id>', methods=['PUT'])
+def update_weight(id):
+    weight = Weight.query.get(id)
+    
+    if not weight:
+        return jsonify({'message': 'Weight record not found!'}), 404
+
+    data = request.get_json()
+    if 'date' in data:
+        weight.date = data['date']
+    if 'weight_value' in data:
+        weight.weight_value = data['weight_value']
+
+    db.session.commit()
+
+    return jsonify({'message': 'Weight updated successfully!', 'weight': weight.serialize()}), 200
+
+@app.route('/api/weight/<int:id>', methods=['DELETE'])
+def delete_weight(id):
+    weight = Weight.query.get(id)
+    
+    if not weight:
+        return jsonify({'message': 'Weight record not found!'}), 404
+
+    db.session.delete(weight)
+    db.session.commit()
+
+    return jsonify({'message': 'Weight deleted successfully!'}), 200
+
+@app.route('/api/weight/user/<int:user_id>/range', methods=['POST'])
+def get_weights_in_date_range(user_id):
+    data = request.get_json()
+    start_date = data['start_date']
+    end_date = data['end_date']
+
+    weights = Weight.query.filter(
+        and_(Weight.user_id == user_id, Weight.date.between(start_date, end_date))
+    ).all()
+
+    return jsonify([weight.serialize() for weight in weights]), 200
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

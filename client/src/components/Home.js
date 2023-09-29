@@ -4,6 +4,7 @@ import WelcomeHeader from './WelcomeHeader';
 import AuthSection from './AuthSection';
 import FeaturesSection from './FeaturesSection';
 import WorkoutLog from './workout/WorkoutLog';
+import WeightInputForm from './weight/WeightInputForm';
 import { useUser } from '../UserContext'; 
 
 function Home() {
@@ -17,6 +18,7 @@ function Home() {
         return (
             <div className="home-container">
                 <NavBar />
+                <WeightInputForm userId={user.cid} />
                 <WorkoutLog userId={user.cid} />
             </div>
         );

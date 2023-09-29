@@ -5,6 +5,7 @@ import Navbar from './components/NavBar';
 import Register from './components/auth/Register';
 import Login from './components/auth/Login';
 import WorkoutLog from './components/workout/WorkoutLog'; 
+import WeightInputForm from './components/weight/WeightInputForm';
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
           <Route path="/workouts" element={<WorkoutLog />} />
+          <Route path="/add-weight" element={<WeightInputForm />} />
           <Route path="*" element={<MainRoutes />} />
         </Routes>
       </BrowserRouter>
@@ -33,6 +35,7 @@ function MainRoutes() {
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
         <Route path="/workouts" element={<WorkoutLog />} />
+        <Route path="/add-weight" element={<WeightInputForm />} />
       </Routes>
     </>
   );
