@@ -53,10 +53,16 @@ function WeightInputForm({ userId }) {
     };
 
     function formatDate(isoDate) {
-        const adjustedDate = new Date(isoDate + "T12:00:00Z"); // Adjust the date to handle timezone differences
+        const originalDate = new Date(isoDate);
+        const timeZoneOffset = originalDate.getTimezoneOffset() * 60000; // Convert the offset from minutes to milliseconds
+        const adjustedDate = new Date(originalDate.getTime() + timeZoneOffset);
         const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
         return adjustedDate.toLocaleDateString(undefined, options);
-    }     
+    }   
+    
+
+    // Sorting data in descending order
+    const sortedData = existingData ? [...existingData].sort((a, b) => new Date(b.date) - new Date(a.date)) : null;
     
     return (
         <div className="weight-input-form">
@@ -87,7 +93,7 @@ function WeightInputForm({ userId }) {
                 </div>
             </form>
             
-            {existingData && existingData.length > 0 ? (
+            {sortedData && sortedData.length > 0 ? (
                 <div className="existing-data">
                     <h3>Existing Data</h3>
                     <table>
@@ -98,7 +104,7 @@ function WeightInputForm({ userId }) {
                             </tr>
                         </thead>
                         <tbody>
-                            {existingData.map((data, index) => (
+                            {sortedData.map((data, index) => (
                                 <tr key={index}>
                                     <td>{formatDate(data.date)}</td>
                                     <td>{data.weight_value}</td>
@@ -111,10 +117,10 @@ function WeightInputForm({ userId }) {
                 <p>No data found. Please input your weight.</p>
             )}
 
-            {existingData && existingData.length > 0 && (
+            {sortedData && sortedData.length > 0 && (
                 <div className="weight-progress-chart">
                     <h3>Weight Progress Over Time</h3>
-                    <WeightProgressChart weightData={existingData} />
+                    <WeightProgressChart weightData={sortedData} />
                 </div>
             )}
         </div>
