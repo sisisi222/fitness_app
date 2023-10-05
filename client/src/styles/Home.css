@@ -1,7 +1,28 @@
 .home-container {
     font-family: Arial, sans-serif;
-    background-color: #ee0000;
+    /* background-color: #ee0000; */
     display: block; /* Ensures it's a block-level element */
     width: 100vw;
     box-sizing: border-box; /* Ensures padding and border are included in the total width */
+}
+
+.user-options {
+    padding: 20px;
+    border: 1px solid #007BFF;
+    border-radius: 10px;
+    margin: 20px 0;
+    text-align: center;
+}
+
+.user-options a {
+    font-size: 60px;
+    color: #007BFF;
+    text-decoration: none;
+    padding: 10px;
+    display: block; /* Makes the entire area clickable */
+    margin: 10px 0;
+}
+
+.user-options a:hover {
+    background-color: #e8e8e8; /* Adds a hover effect to the links */
 }

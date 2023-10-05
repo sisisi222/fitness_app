@@ -3,23 +3,31 @@ import NavBar from './NavBar';
 import WelcomeHeader from './WelcomeHeader';
 import AuthSection from './AuthSection';
 import FeaturesSection from './FeaturesSection';
-import WorkoutLog from './workout/WorkoutLog';
-import WeightInputForm from './weight/WeightInputForm';
-import { useUser } from '../UserContext'; 
+import { Link } from 'react-router-dom';
+import '../styles/Home.css'
 
-function Home() {
-    const { user } = useUser(); // Use the context to get the user
-    
-    // Log the user ID to the console
-    //console.log("User ID in Home:", user?.cid);
+function Home({ userId }) {
 
-    // Check if the user is logged in based on whether there's a user object or not
-    if (user) {
+    if (userId) {
         return (
             <div className="home-container">
                 <NavBar />
-                <WeightInputForm userId={user.cid} />
-                <WorkoutLog userId={user.cid} />
+                <div className="welcome-section">
+                    <h2>Welcome to FlexiFitness!</h2>
+                    <h1>What would you like to do today?</h1>
+                    <div className="user-options">
+                        <div className='option-link'>
+                            <Link to="/workouts">Add/Edit a new workout</Link>
+                        </div>
+                        <div className='option-link'>
+                            <Link to="/add-weight">Add/Edit Your Weight</Link>
+                        </div>
+                        <div className='option-link'>
+                            <Link to="/body-measurement">Add/Edit Your Body Measurement</Link>
+                        </div>
+                    </div>
+                    <p>Thank you for using our app!</p>
+                </div>
             </div>
         );
     }
@@ -35,3 +43,4 @@ function Home() {
 }
 
 export default Home;
+

@@ -384,12 +384,6 @@ def get_workouts_by_user(user_id):
     return jsonify(workout_data), 200
 
 
-
-
-
-
-
-
 # FOR WEIGHT
 
 @app.route('/api/weight', methods=['POST'])
@@ -452,6 +446,81 @@ def get_weights_in_date_range(user_id):
     ).all()
 
     return jsonify([weight.serialize() for weight in weights]), 200
+
+# FOR BODY MEASUAMENT
+
+@app.route('/api/body_measurements', methods=['POST'])
+def add_body_measurement():
+    data = request.get_json()
+
+    new_measurement = BodyMeasurement(
+        user_id=data['user_id'],
+        date=data['date'],
+        waist=data['waist'],
+        chest=data['chest'],
+        arms=data['arms'],
+        legs=data['legs'],
+        hip=data['hip']
+    )
+
+    db.session.add(new_measurement)
+    db.session.commit()
+
+    return jsonify({'message': 'Body measurement added successfully!', 'measurement': new_measurement.serialize()}), 201
+
+@app.route('/api/body_measurements/user/<int:user_id>', methods=['GET'])
+def get_all_measurements(user_id):
+    measurements = BodyMeasurement.query.filter_by(user_id=user_id).all()
+    return jsonify([measurement.serialize() for measurement in measurements]), 200
+
+@app.route('/api/body_measurements/<int:id>', methods=['PUT'])
+def update_body_measurement(id):
+    measurement = BodyMeasurement.query.get(id)
+
+    if not measurement:
+        return jsonify({'message': 'Body measurement record not found!'}), 404
+
+    data = request.get_json()
+    if 'date' in data:
+        measurement.date = data['date']
+    if 'waist' in data:
+        measurement.waist = data['waist']
+    if 'chest' in data:
+        measurement.chest = data['chest']
+    if 'arms' in data:
+        measurement.arms = data['arms']
+    if 'legs' in data:
+        measurement.legs = data['legs']
+    if 'hip' in data:
+        measurement.hip = data['hip']
+
+    db.session.commit()
+
+    return jsonify({'message': 'Body measurement updated successfully!', 'measurement': measurement.serialize()}), 200
+
+@app.route('/api/body_measurements/<int:id>', methods=['DELETE'])
+def delete_body_measurement(id):
+    measurement = BodyMeasurement.query.get(id)
+
+    if not measurement:
+        return jsonify({'message': 'Body measurement record not found!'}), 404
+
+    db.session.delete(measurement)
+    db.session.commit()
+
+    return jsonify({'message': 'Body measurement deleted successfully!'}), 200
+
+@app.route('/api/body_measurements/user/<int:user_id>/range', methods=['POST'])
+def get_body_measurements_in_date_range(user_id):
+    data = request.get_json()
+    start_date = data['start_date']
+    end_date = data['end_date']
+
+    measurements = BodyMeasurement.query.filter(
+        and_(BodyMeasurement.user_id == user_id, BodyMeasurement.date.between(start_date, end_date))
+    ).all()
+
+    return jsonify([measurement.serialize() for measurement in measurements]), 200
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
