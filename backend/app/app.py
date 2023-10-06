@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash 
+from sqlalchemy.dialects.postgresql import ENUM
 
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
@@ -162,6 +163,33 @@ class BodyMeasurement(db.Model):
             'arms': self.arms,
             'legs': self.legs,
             'hip': self.hip
+        }
+
+# Enum type for goal metric
+GoalMetrics = ENUM('Duration', 'Sessions', name='goal_metrics', create_type=True)
+
+class Goal(db.Model):
+    __tablename__ = 'goals'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    exercise_type_id = db.Column(db.Integer, db.ForeignKey('exercise_types.id'), nullable=False)
+    goal_metric = db.Column(GoalMetrics, nullable=False)
+    goal_value = db.Column(db.Float, nullable=False)
+    start_date = db.Column(db.Date, nullable=False)
+    end_date = db.Column(db.Date, nullable=False)
+
+    user = db.relationship('User', backref=db.backref('goals', lazy=True))
+    exercise_type = db.relationship('ExerciseType', backref=db.backref('goals', lazy=True))
+
+    def serialize(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'exercise_type_id': self.exercise_type_id,
+            'goal_metric': self.goal_metric,
+            'goal_value': self.goal_value,
+            'start_date': self.start_date,
+            'end_date': self.end_date
         }
 
 # Routes
@@ -521,6 +549,68 @@ def get_body_measurements_in_date_range(user_id):
     ).all()
 
     return jsonify([measurement.serialize() for measurement in measurements]), 200
+
+
+
+
+# FOR GOALS
+@app.route('/api/goals', methods=['POST'])
+def set_goal():
+    data = request.get_json()
+    goal = Goal(
+        user_id=data['user_id'],
+        exercise_type_id=data['exercise_type_id'],
+        goal_metric=data['goal_metric'],
+        goal_value=data['goal_value'],
+        start_date=data['start_date'],
+        end_date=data['end_date']
+    )
+    db.session.add(goal)
+    db.session.commit()
+    return jsonify({'message': 'Goal set successfully!'}), 201
+
+@app.route('/api/goals/<int:user_id>', methods=['GET'])
+def get_goals(user_id):
+    goals = Goal.query.filter_by(user_id=user_id).all()
+    return jsonify([goal.serialize() for goal in goals])
+
+@app.route('/api/progress/<int:user_id>', methods=['GET'])
+def get_progress(user_id):
+    today = datetime.date.today()
+    
+    aerobic_goal = Goal.query.filter_by(user_id=user_id, exercise_type_id=1).first()
+    cardio_goal = Goal.query.filter_by(user_id=user_id, exercise_type_id=2).first()
+    weight_goal = Goal.query.filter_by(user_id=user_id, exercise_type_id=3).first()
+
+    start_date = None
+    end_date = None
+    if aerobic_goal: 
+        start_date = aerobic_goal.start_date
+        end_date = aerobic_goal.end_date
+    elif cardio_goal: 
+        start_date = cardio_goal.start_date
+        end_date = cardio_goal.end_date
+    elif weight_goal: 
+        start_date = weight_goal.start_date
+        end_date = weight_goal.end_date
+
+    if not start_date or not end_date:
+        # If no goals set, you can return a default progress value or just workouts in the past 7 days
+        # Here, we're considering past 7 days if no goals are set
+        end_date = today
+        start_date = today - datetime.timedelta(days=7)
+
+    workouts = Workout.query.filter(Workout.user_id == user_id, Workout.date >= start_date, Workout.date <= end_date).all()
+    
+    aerobic_duration = sum([workout.aerobic_detail.duration for workout in workouts if workout.exercise_type_id == 1])
+    cardio_sessions = len([workout for workout in workouts if workout.exercise_type_id == 2])
+    weight_sessions = len([workout for workout in workouts if workout.exercise_type_id == 3])
+
+    return jsonify({
+        'aerobic_duration': aerobic_duration,
+        'cardio_sessions': cardio_sessions,
+        'weight_sessions': weight_sessions
+    })
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

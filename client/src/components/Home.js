@@ -25,6 +25,9 @@ function Home({ userId }) {
                         <div className='option-link'>
                             <Link to="/body-measurement">Add/Edit Your Body Measurement</Link>
                         </div>
+                        <div className='option-link'>
+                            <Link to="/Goal">Add Your Goal</Link>
+                        </div>
                     </div>
                     <p>Thank you for using our app!</p>
                 </div>

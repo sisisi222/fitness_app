@@ -58,7 +58,7 @@ function MeasurementProgressChart({ measurementData }) {
         pointStyle: 'rect',
         pointBorderColor: 'purple',
         pointBackgroundColor: '#fff',
-        showLine: true
+        showLine: true,
       },
       {
         label: 'Hip Size',
@@ -107,6 +107,23 @@ function MeasurementProgressChart({ measurementData }) {
         }
       }
     }
+    , plugins: {
+      legend: {
+        labels: {
+          font: {
+            size: 30, // Set the desired font size for the dataset labels
+          },
+        },
+      },
+    },
+    elements: {
+      point: {
+        // You can set font size for point labels here, e.g.:
+        font: {
+          size: 16, // Set the desired font size for the point labels
+        },
+      },
+    },
   };
 
   useEffect(() => {
