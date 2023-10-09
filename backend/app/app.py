@@ -576,7 +576,6 @@ def get_goals(user_id):
 
 @app.route('/api/progress/<int:user_id>', methods=['GET'])
 def get_progress(user_id):
-    today = datetime.date.today()
     
     aerobic_goal = Goal.query.filter_by(user_id=user_id, exercise_type_id=1).first()
     cardio_goal = Goal.query.filter_by(user_id=user_id, exercise_type_id=2).first()
@@ -584,6 +583,8 @@ def get_progress(user_id):
 
     start_date = None
     end_date = None
+
+    # Here, we ensure to select a valid date range based on the goal.
     if aerobic_goal: 
         start_date = aerobic_goal.start_date
         end_date = aerobic_goal.end_date
@@ -594,14 +595,18 @@ def get_progress(user_id):
         start_date = weight_goal.start_date
         end_date = weight_goal.end_date
 
-    if not start_date or not end_date:
-        # If no goals set, you can return a default progress value or just workouts in the past 7 days
-        # Here, we're considering past 7 days if no goals are set
-        end_date = today
-        start_date = today - datetime.timedelta(days=7)
 
-    workouts = Workout.query.filter(Workout.user_id == user_id, Workout.date >= start_date, Workout.date <= end_date).all()
-    
+    # If there's no goal set for the current week, we return a default progress.
+    if not start_date or not end_date:
+        return jsonify({'message': 'No active goal set for the current week.'})
+
+    # Fetch workouts within the goal duration.
+    workouts = Workout.query.filter(
+        Workout.user_id == user_id, 
+        Workout.date >= start_date, 
+        Workout.date <= end_date
+    ).all()
+
     aerobic_duration = sum([workout.aerobic_detail.duration for workout in workouts if workout.exercise_type_id == 1])
     cardio_sessions = len([workout for workout in workouts if workout.exercise_type_id == 2])
     weight_sessions = len([workout for workout in workouts if workout.exercise_type_id == 3])

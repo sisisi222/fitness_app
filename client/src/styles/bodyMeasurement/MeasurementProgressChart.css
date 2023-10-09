@@ -1,0 +1,15 @@
+.toggle-button {
+    /* background-color: rgb(18, 32, 34); */
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-right: 8px;
+    margin-left: 5px;
+    width: 260px;
+}
+
+.toggle-button:hover {
+    background-color: darkblue;
+}

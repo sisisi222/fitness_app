@@ -10,6 +10,12 @@ function WorkoutLog({ userId }) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [goals, setGoals] = useState([]);
+    const [progress, setProgress] = useState({
+        aerobic: 0,
+        cardio: 0,
+        weightTraining: 0,
+    });
+    
 
     useEffect(() => {
         async function fetchWorkouts() {
@@ -41,11 +47,13 @@ function WorkoutLog({ userId }) {
         }
         fetchWorkouts();
         fetchGoals();
+        fetchProgress();
     }, [userId]);
 
     const handleAddSuccess = (newWorkout) => {
         setWorkouts([...workouts, newWorkout]);
         console.log("New workout added:", newWorkout);
+        fetchProgress();
     };
 
     const handleEditSuccess = (updatedWorkout) => {
@@ -55,6 +63,7 @@ function WorkoutLog({ userId }) {
         );
         setWorkouts([...updatedWorkouts]);
         setSelectedWorkout(null); //Hide the edit table after sucessfully edit
+        fetchProgress();
     };
 
     const handleEditRequest = (workoutId) => {
@@ -65,33 +74,26 @@ function WorkoutLog({ userId }) {
     const handleDeleteSuccess = (workoutId) => {
         const remainingWorkouts = workouts.filter(workout => workout.id !== workoutId);
         setWorkouts(remainingWorkouts);
+        fetchProgress();
     };
 
-    function calculateProgress() {
-        const progress = {};
-    
-        // For Aerobic: Sum durations
-        const totalAerobicDuration = workouts
-            .filter(workout => workout.exercise_type_id === 1)
-            .reduce((sum, workout) => sum + (workout.details?.duration || 0), 0);
-        progress.aerobic = totalAerobicDuration;
-    
-        // For Cardio: Count sessions
-        const totalCardioSessions = workouts
-            .filter(workout => workout.exercise_type_id === 2)
-            .length;
-        progress.cardio = totalCardioSessions;
-    
-        // For Weight Training: Count sessions
-        const totalWeightTrainingSessions = workouts
-            .filter(workout => workout.exercise_type_id === 3)
-            .length;
-        progress.weightTraining = totalWeightTrainingSessions;
-    
-        return progress;
+    async function fetchProgress() {
+    try {
+        const response = await fetch(`http://localhost:5000/api/progress/${userId}`);
+        if (!response.ok) {
+            throw new Error('Failed to fetch progress');
+        }
+        const data = await response.json();
+        setProgress({
+            aerobic: data.aerobic_duration,
+            cardio: data.cardio_sessions,
+            weightTraining: data.weight_sessions,
+        });
+    } catch (err) {
+        setError(err.message);
     }
     
-    const progress = calculateProgress();    
+} 
 
     if (loading) return <p>Loading...</p>;
     if (error) return <p>Error: {error}</p>;
@@ -127,30 +129,27 @@ function WorkoutLog({ userId }) {
                         </tr>
                     </thead>
                     <tbody>
-                        {goals.find(goal => goal.exercise_type_id === 1) && (
-                            <tr>
-                                <td>Aerobic</td>
-                                <td>{progress.aerobic} hours this week</td>
-                                <td>{goals.find(goal => goal.exercise_type_id === 1)?.goal_value || 0} hours</td>
-                            </tr>
-                        )}
-                        {goals.find(goal => goal.exercise_type_id === 2) && (
-                            <tr>
-                                <td>Cardio</td>
-                                <td>{progress.cardio} sessions this week</td>
-                                <td>{goals.find(goal => goal.exercise_type_id === 2)?.goal_value || 0} sessions</td>
-                            </tr>
-                        )}
-                        {goals.find(goal => goal.exercise_type_id === 3) && (
-                            <tr>
-                                <td>Weight Training</td>
-                                <td>{progress.weightTraining} sessions this week</td>
-                                <td>{goals.find(goal => goal.exercise_type_id === 3)?.goal_value || 0} sessions</td>
-                            </tr>
-                        )}
+                        <tr>
+                            <td>Aerobic</td>
+                            <td>{progress.aerobic} hours this week</td>
+                            <td>{goals.find(goal => goal.exercise_type_id === 1)?.goal_value || 0} hours</td>
+                        </tr>
+                        <tr>
+                            <td>Cardio</td>
+                            <td>{progress.cardio} sessions this week</td>
+                            <td>{goals.find(goal => goal.exercise_type_id === 2)?.goal_value || 0} sessions</td>
+                        </tr>
+                        <tr>
+                            <td>Weight Training</td>
+                            <td>{progress.weightTraining} sessions this week</td>
+                            <td>{goals.find(goal => goal.exercise_type_id === 3)?.goal_value || 0} sessions</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
+
+
+
         </div>
     );
 }

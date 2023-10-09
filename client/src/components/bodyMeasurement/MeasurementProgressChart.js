@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Line } from 'react-chartjs-2';
 import { Chart as ChartJS, Title, Tooltip, LineElement, Legend, CategoryScale, LinearScale, PointElement, Filler, TimeScale } from 'chart.js';
 import 'chartjs-adapter-moment';
+import '../../styles/bodyMeasurement/MeasurementProgressChart.css'
 
 ChartJS.register(
   Title, Tooltip, LineElement, Legend,
@@ -74,6 +75,13 @@ function MeasurementProgressChart({ measurementData }) {
     ]
   });
 
+  // Visibility flags for each measurement type
+  const [waistVisible, setWaistVisible] = useState(true);
+  const [chestVisible, setChestVisible] = useState(true);
+  const [armsVisible, setArmsVisible] = useState(true);
+  const [legsVisible, setLegsVisible] = useState(true);
+  const [hipVisible, setHipVisible] = useState(true);
+
   const options = {
     scales: {
       x: {
@@ -127,13 +135,11 @@ function MeasurementProgressChart({ measurementData }) {
   };
 
   useEffect(() => {
-    setChartData({
-        labels: measurementData.map(entry => {
-            const originalDate = new Date(entry.date);
-            return originalDate.toISOString().split('T')[0];
-        }),
-        datasets: [
-          {
+    const datasets = [];
+
+    // Only push datasets to the array if their visibility flags are true
+    if (waistVisible) {
+        datasets.push({
             label: 'Waist Size',
             data: measurementData.map(entry => entry.waist),
             borderColor: 'green',
@@ -143,8 +149,11 @@ function MeasurementProgressChart({ measurementData }) {
             pointBorderColor: 'green',
             pointBackgroundColor: '#fff',
             showLine: true
-          },
-          {
+        });
+    }
+
+    if (chestVisible) {
+        datasets.push({
             label: 'Chest Size',
             data: measurementData.map(entry => entry.chest),
             borderColor: 'blue',
@@ -154,8 +163,11 @@ function MeasurementProgressChart({ measurementData }) {
             pointBorderColor: 'blue',
             pointBackgroundColor: '#fff',
             showLine: true
-          },
-          {
+        });
+    }
+
+    if (armsVisible) {
+        datasets.push({
             label: 'Arm Size',
             data: measurementData.map(entry => entry.arms),
             borderColor: 'red',
@@ -165,8 +177,11 @@ function MeasurementProgressChart({ measurementData }) {
             pointBorderColor: 'red',
             pointBackgroundColor: '#fff',
             showLine: true
-          },
-          {
+        });
+    }
+
+    if (legsVisible) {
+        datasets.push({
             label: 'Leg Size',
             data: measurementData.map(entry => entry.legs),
             borderColor: 'purple',
@@ -176,8 +191,11 @@ function MeasurementProgressChart({ measurementData }) {
             pointBorderColor: 'purple',
             pointBackgroundColor: '#fff',
             showLine: true
-          },
-          {
+        });
+    }
+
+    if (hipVisible) {
+        datasets.push({
             label: 'Hip Size',
             data: measurementData.map(entry => entry.hip),
             borderColor: 'orange',
@@ -187,14 +205,31 @@ function MeasurementProgressChart({ measurementData }) {
             pointBorderColor: 'orange',
             pointBackgroundColor: '#fff',
             showLine: true
-          }
-        ]
+        });
+    }
+
+    setChartData({
+        labels: measurementData.map(entry => {
+            const originalDate = new Date(entry.date);
+            return originalDate.toISOString().split('T')[0];
+        }),
+        datasets: datasets
     });
-}, [measurementData]);
+
+}, [measurementData, waistVisible, chestVisible, armsVisible, legsVisible, hipVisible]);
 
   return (
-    <div style={{ width: '1300px', height: '1300px' }}>
-      <Line data={chartData} options={options} />
+    <div>
+        <div>
+            <button className="toggle-button" onClick={() => setWaistVisible(!waistVisible)}>On/Off Waist</button>
+            <button className="toggle-button" onClick={() => setChestVisible(!chestVisible)}>On/Off Chest</button>
+            <button className="toggle-button" onClick={() => setArmsVisible(!armsVisible)}>On/Off Arms</button>
+            <button className="toggle-button" onClick={() => setLegsVisible(!legsVisible)}>On/Off Legs</button>
+            <button className="toggle-button" onClick={() => setHipVisible(!hipVisible)}>On/Off Hip</button>
+        </div>
+        <div style={{ width: '1300px', height: '1300px' }}>
+            <Line data={chartData} options={options} />
+        </div>
     </div>
   );
 }
