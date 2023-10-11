@@ -15,7 +15,11 @@ function WorkoutLog({ userId }) {
         cardio: 0,
         weightTraining: 0,
     });
-    
+    const [completion, setCompletion] = useState({
+        aerobic: 0,
+        cardio: 0,
+        weightTraining: 0,
+    });
 
     useEffect(() => {
         async function fetchWorkouts() {
@@ -45,15 +49,18 @@ function WorkoutLog({ userId }) {
                 setError(err.message);
             }
         }
+
         fetchWorkouts();
         fetchGoals();
         fetchProgress();
+        fetchCompletion();
     }, [userId]);
 
     const handleAddSuccess = (newWorkout) => {
         setWorkouts([...workouts, newWorkout]);
         console.log("New workout added:", newWorkout);
         fetchProgress();
+        fetchCompletion();
     };
 
     const handleEditSuccess = (updatedWorkout) => {
@@ -64,6 +71,7 @@ function WorkoutLog({ userId }) {
         setWorkouts([...updatedWorkouts]);
         setSelectedWorkout(null); //Hide the edit table after sucessfully edit
         fetchProgress();
+        fetchCompletion();
     };
 
     const handleEditRequest = (workoutId) => {
@@ -75,25 +83,43 @@ function WorkoutLog({ userId }) {
         const remainingWorkouts = workouts.filter(workout => workout.id !== workoutId);
         setWorkouts(remainingWorkouts);
         fetchProgress();
+        fetchCompletion();
     };
 
     async function fetchProgress() {
-    try {
-        const response = await fetch(`http://localhost:5000/api/progress/${userId}`);
-        if (!response.ok) {
-            throw new Error('Failed to fetch progress');
+        try {
+            const response = await fetch(`http://localhost:5000/api/progress/${userId}`);
+            if (!response.ok) {
+                throw new Error('Failed to fetch progress');
+            }
+            const data = await response.json();
+            setProgress({
+                aerobic: data.aerobic_duration,
+                cardio: data.cardio_sessions,
+                weightTraining: data.weight_sessions,
+            });
+        } catch (err) {
+            setError(err.message);
         }
-        const data = await response.json();
-        setProgress({
-            aerobic: data.aerobic_duration,
-            cardio: data.cardio_sessions,
-            weightTraining: data.weight_sessions,
-        });
-    } catch (err) {
-        setError(err.message);
+        
+    } 
+
+    async function fetchCompletion() {
+        try {
+            const response = await fetch(`http://localhost:5000/api/completion/${userId}`);
+            if (!response.ok) {
+                throw new Error('Failed to fetch completion');
+            }
+            const data = await response.json();
+            setCompletion({
+                aerobic: data.aerobic_completion,
+                cardio: data.cardio_completion,
+                weightTraining: data.weight_completion,
+            });
+        } catch (err) {
+            setError(err.message);
+        }
     }
-    
-} 
 
     if (loading) return <p>Loading...</p>;
     if (error) return <p>Error: {error}</p>;
@@ -131,17 +157,20 @@ function WorkoutLog({ userId }) {
                     <tbody>
                         <tr>
                             <td>Aerobic</td>
-                            <td>{progress.aerobic} hours this week</td>
+                            <td>{progress.aerobic} hours completed</td>
+                            <td>{completion.aerobic}%</td>
                             <td>{goals.find(goal => goal.exercise_type_id === 1)?.goal_value || 0} hours</td>
                         </tr>
                         <tr>
                             <td>Cardio</td>
-                            <td>{progress.cardio} sessions this week</td>
+                            <td>{progress.cardio} sessions completed</td>
+                            <td>{completion.cardio}%</td>
                             <td>{goals.find(goal => goal.exercise_type_id === 2)?.goal_value || 0} sessions</td>
                         </tr>
                         <tr>
                             <td>Weight Training</td>
-                            <td>{progress.weightTraining} sessions this week</td>
+                            <td>{progress.weightTraining} sessions completed</td>
+                            <td>{completion.weightTraining}%</td>
                             <td>{goals.find(goal => goal.exercise_type_id === 3)?.goal_value || 0} sessions</td>
                         </tr>
                     </tbody>

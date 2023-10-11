@@ -4,6 +4,8 @@ from flask_bcrypt import Bcrypt
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash 
 from sqlalchemy.dialects.postgresql import ENUM
+from datetime import datetime, timedelta
+
 
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
@@ -550,9 +552,6 @@ def get_body_measurements_in_date_range(user_id):
 
     return jsonify([measurement.serialize() for measurement in measurements]), 200
 
-
-
-
 # FOR GOALS
 @app.route('/api/goals', methods=['POST'])
 def set_goal():
@@ -616,6 +615,36 @@ def get_progress(user_id):
         'cardio_sessions': cardio_sessions,
         'weight_sessions': weight_sessions
     })
+
+@app.route('/api/completion/<int:user_id>', methods=['GET'])
+def get_completion(user_id):
+    try:
+        # Fetch user's goals
+        aerobic_goal = Goal.query.filter_by(user_id=user_id, exercise_type_id=1).first()
+        cardio_goal = Goal.query.filter_by(user_id=user_id, exercise_type_id=2).first()
+        weight_goal = Goal.query.filter_by(user_id=user_id, exercise_type_id=3).first()
+
+        # Fetch user's progress for this week
+        progress_data = get_progress(user_id).get_json()
+
+        # Extract progress values
+        aerobic_duration = progress_data['aerobic_duration']
+        cardio_sessions = progress_data['cardio_sessions']
+        weight_sessions = progress_data['weight_sessions']
+
+        # Calculate completion percentages
+        aerobic_completion = round((aerobic_duration / (aerobic_goal.goal_value if aerobic_goal else 1)) * 100, 1)
+        cardio_completion = round((cardio_sessions / (cardio_goal.goal_value if cardio_goal else 1)) * 100, 1)
+        weight_completion = round((weight_sessions / (weight_goal.goal_value if weight_goal else 1)) * 100, 1)
+
+        return jsonify({
+            'aerobic_completion': min(100, aerobic_completion),  # Cap completion at 100%
+            'cardio_completion': min(100, cardio_completion),  # Cap completion at 100%
+            'weight_completion': min(100, weight_completion)   # Cap completion at 100%
+        }), 200
+
+    except Exception as e:
+        return jsonify({'message': 'Error calculating completion: ' + str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

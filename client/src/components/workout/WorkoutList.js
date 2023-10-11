@@ -77,14 +77,14 @@ function WorkoutList({ workouts, onEditRequest, onDeleteRequest }) {
                                     {workout.exercise_type_id === 1 && workout.details?.activity_name && (
                                         <div>
                                             <div>Activity: {workout.details.activity_name}</div>
-                                            <div>Duration (minutes): {workout.details.duration}</div>
+                                            <div>Duration (hours): {workout.details.duration}</div>
                                             <div>Speed (mph): {workout.details.speed}</div>
                                         </div>
                                     )}
                                     {workout.exercise_type_id === 2 && workout.details?.machine_name && (
                                         <div>
                                             <div>Machine: {workout.details.machine_name}</div>
-                                            <div>Time (minutes): {workout.details.time_duration}</div>
+                                            <div>Time (hours): {workout.details.time_duration}</div>
                                             <div>Distance (miles): {workout.details.distance}</div>
                                         </div>
                                     )}

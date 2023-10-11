@@ -109,7 +109,7 @@ function AddWorkout({ onAddSuccess, userId }) {
                             <input type="text" value={activity_name} onChange={e => setActivityName(e.target.value)} />
                         </label>
                         <label>
-                            Duration (minutes):
+                            Duration (hours):
                             <input type="number" value={duration} onChange={e => setDuration(e.target.value)} />
                         </label>
                         <label>
@@ -125,7 +125,7 @@ function AddWorkout({ onAddSuccess, userId }) {
                             <input type="text" value={machine_name} onChange={e => setMachineName(e.target.value)} />
                         </label>
                         <label>
-                            Time Duration (minutes):
+                            Time Duration (hours):
                             <input type="number" value={time_duration} onChange={e => setTimeDuration(e.target.value)} />
                         </label>
                         <label>
