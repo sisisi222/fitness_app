@@ -5,6 +5,8 @@ from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash 
 from sqlalchemy.dialects.postgresql import ENUM
 from datetime import datetime, timedelta
+from sqlalchemy import and_
+
 
 
 app = Flask(__name__)
@@ -552,10 +554,35 @@ def get_body_measurements_in_date_range(user_id):
 
     return jsonify([measurement.serialize() for measurement in measurements]), 200
 
-# FOR GOALS
+
+# FOR GOAL IMPLEMENT
 @app.route('/api/goals', methods=['POST'])
 def set_goal():
     data = request.get_json()
+
+    # Check for exact duplicate goals
+    duplicate_goal = Goal.query.filter_by(
+        user_id=data['user_id'],
+        exercise_type_id=data['exercise_type_id'],
+        start_date=data['start_date'],
+        end_date=data['end_date']
+    ).first()
+    if duplicate_goal:
+        return jsonify({'message': 'This exact goal already exists!'}), 400
+
+    # Check for overlapping goals of the same exercise type
+    overlapping_goal = Goal.query.filter(
+        Goal.user_id == data['user_id'],
+        Goal.exercise_type_id == data['exercise_type_id'],
+        and_(
+            Goal.start_date <= data['end_date'],
+            Goal.end_date >= data['start_date']
+        )
+    ).first()
+    if overlapping_goal:
+        return jsonify({'message': 'There is an overlapping goal for the given period!'}), 400
+
+    # If no duplicates or overlaps, add the goal
     goal = Goal(
         user_id=data['user_id'],
         exercise_type_id=data['exercise_type_id'],
@@ -568,47 +595,140 @@ def set_goal():
     db.session.commit()
     return jsonify({'message': 'Goal set successfully!'}), 201
 
+@app.route('/api/goals/<int:goal_id>', methods=['PUT'])
+def update_goal(goal_id):
+    data = request.get_json()
+
+    # Fetch the goal to update
+    existing_goal = Goal.query.get(goal_id)
+    if not existing_goal:
+        return jsonify({'message': 'Goal not found!'}), 404
+
+    # Check for exact duplicate goals (other than the one being updated)
+    duplicate_goal = Goal.query.filter(
+        Goal.id != goal_id,
+        Goal.user_id == data['user_id'],
+        Goal.exercise_type_id == data['exercise_type_id'],
+        Goal.start_date == data['start_date'],
+        Goal.end_date == data['end_date']
+    ).first()
+    if duplicate_goal:
+        return jsonify({'message': 'This exact goal already exists!'}), 400
+
+    # Check for overlapping goals (other than the one being updated)
+    overlapping_goal = Goal.query.filter(
+        Goal.id != goal_id,
+        Goal.user_id == data['user_id'],
+        Goal.exercise_type_id == data['exercise_type_id'],
+        and_(
+            Goal.start_date <= data['end_date'],
+            Goal.end_date >= data['start_date']
+        )
+    ).first()
+    if overlapping_goal:
+        return jsonify({'message': 'There is an overlapping goal for the given period!'}), 400
+
+    # Update the goal if no conflicts are found
+    existing_goal.user_id = data['user_id']
+    existing_goal.exercise_type_id = data['exercise_type_id']
+    existing_goal.goal_metric = data['goal_metric']
+    existing_goal.goal_value = data['goal_value']
+    existing_goal.start_date = data['start_date']
+    existing_goal.end_date = data['end_date']
+    db.session.commit()
+
+    return jsonify({'message': 'Goal updated successfully!'}), 200
+
 @app.route('/api/goals/<int:user_id>', methods=['GET'])
 def get_goals(user_id):
     goals = Goal.query.filter_by(user_id=user_id).all()
     return jsonify([goal.serialize() for goal in goals])
 
+# @app.route('/api/progress/<int:user_id>', methods=['GET'])
+# def get_progress(user_id):
+    
+#     aerobic_goal = Goal.query.filter_by(user_id=user_id, exercise_type_id=1).first()
+#     cardio_goal = Goal.query.filter_by(user_id=user_id, exercise_type_id=2).first()
+#     weight_goal = Goal.query.filter_by(user_id=user_id, exercise_type_id=3).first()
+
+#     start_date = None
+#     end_date = None
+
+#     # Here, we ensure to select a valid date range based on the goal.
+#     if aerobic_goal: 
+#         start_date = aerobic_goal.start_date
+#         end_date = aerobic_goal.end_date
+#     elif cardio_goal: 
+#         start_date = cardio_goal.start_date
+#         end_date = cardio_goal.end_date
+#     elif weight_goal: 
+#         start_date = weight_goal.start_date
+#         end_date = weight_goal.end_date
+
+
+#     # If there's no goal set for the current week, we return a default progress.
+#     if not start_date or not end_date:
+#         return jsonify({'message': 'No active goal set for the current week.'})
+
+#     # Fetch workouts within the goal duration.
+#     workouts = Workout.query.filter(
+#         Workout.user_id == user_id, 
+#         Workout.date >= start_date, 
+#         Workout.date <= end_date
+#     ).all()
+
+#     aerobic_duration = sum([workout.aerobic_detail.duration for workout in workouts if workout.exercise_type_id == 1])
+#     cardio_sessions = len([workout for workout in workouts if workout.exercise_type_id == 2])
+#     weight_sessions = len([workout for workout in workouts if workout.exercise_type_id == 3])
+
+#     return jsonify({
+#         'aerobic_duration': aerobic_duration,
+#         'cardio_sessions': cardio_sessions,
+#         'weight_sessions': weight_sessions
+#     })
+
 @app.route('/api/progress/<int:user_id>', methods=['GET'])
 def get_progress(user_id):
     
+    # Fetch the goals for the user by exercise type
     aerobic_goal = Goal.query.filter_by(user_id=user_id, exercise_type_id=1).first()
     cardio_goal = Goal.query.filter_by(user_id=user_id, exercise_type_id=2).first()
     weight_goal = Goal.query.filter_by(user_id=user_id, exercise_type_id=3).first()
 
-    start_date = None
-    end_date = None
+    # Initialize empty lists for workouts related to the goals
+    aerobic_workouts = []
+    cardio_workouts = []
+    weight_workouts = []
 
-    # Here, we ensure to select a valid date range based on the goal.
-    if aerobic_goal: 
-        start_date = aerobic_goal.start_date
-        end_date = aerobic_goal.end_date
-    elif cardio_goal: 
-        start_date = cardio_goal.start_date
-        end_date = cardio_goal.end_date
-    elif weight_goal: 
-        start_date = weight_goal.start_date
-        end_date = weight_goal.end_date
+    # Fetch the workouts based on the goal's start and end date for each exercise type
+    if aerobic_goal:
+        aerobic_workouts = Workout.query.filter(
+            Workout.user_id == user_id, 
+            Workout.date >= aerobic_goal.start_date, 
+            Workout.date <= aerobic_goal.end_date,
+            Workout.exercise_type_id == 1
+        ).all()
 
+    if cardio_goal:
+        cardio_workouts = Workout.query.filter(
+            Workout.user_id == user_id, 
+            Workout.date >= cardio_goal.start_date, 
+            Workout.date <= cardio_goal.end_date,
+            Workout.exercise_type_id == 2
+        ).all()
 
-    # If there's no goal set for the current week, we return a default progress.
-    if not start_date or not end_date:
-        return jsonify({'message': 'No active goal set for the current week.'})
+    if weight_goal:
+        weight_workouts = Workout.query.filter(
+            Workout.user_id == user_id, 
+            Workout.date >= weight_goal.start_date, 
+            Workout.date <= weight_goal.end_date,
+            Workout.exercise_type_id == 3
+        ).all()
 
-    # Fetch workouts within the goal duration.
-    workouts = Workout.query.filter(
-        Workout.user_id == user_id, 
-        Workout.date >= start_date, 
-        Workout.date <= end_date
-    ).all()
-
-    aerobic_duration = sum([workout.aerobic_detail.duration for workout in workouts if workout.exercise_type_id == 1])
-    cardio_sessions = len([workout for workout in workouts if workout.exercise_type_id == 2])
-    weight_sessions = len([workout for workout in workouts if workout.exercise_type_id == 3])
+    # Calculate the progress based on the fetched workouts
+    aerobic_duration = sum([workout.aerobic_detail.duration for workout in aerobic_workouts])
+    cardio_sessions = len(cardio_workouts)
+    weight_sessions = len(weight_workouts)
 
     return jsonify({
         'aerobic_duration': aerobic_duration,
@@ -645,6 +765,15 @@ def get_completion(user_id):
 
     except Exception as e:
         return jsonify({'message': 'Error calculating completion: ' + str(e)}), 500
+
+@app.route('/api/goals/<int:goal_id>', methods=['DELETE'])
+def delete_goal(goal_id):
+    goal = Goal.query.get(goal_id)
+    if not goal:
+        return jsonify({'message': 'Goal not found!'}), 404
+    db.session.delete(goal)
+    db.session.commit()
+    return jsonify({'message': 'Goal deleted successfully!'}), 200
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

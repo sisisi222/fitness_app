@@ -44,7 +44,11 @@ function WorkoutLog({ userId }) {
                     throw new Error('Failed to fetch goals');
                 }
                 const data = await response.json();
-                setGoals(data);
+                
+                // Sort the goals by end_date in descending order
+                const sortedGoals = data.sort((a, b) => new Date(b.end_date) - new Date(a.end_date));
+                
+                setGoals(sortedGoals);
             } catch (err) {
                 setError(err.message);
             }
@@ -120,7 +124,7 @@ function WorkoutLog({ userId }) {
             setError(err.message);
         }
     }
-
+    
     if (loading) return <p>Loading...</p>;
     if (error) return <p>Error: {error}</p>;
 
