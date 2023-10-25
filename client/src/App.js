@@ -8,6 +8,8 @@ import WorkoutLog from './components/workout/WorkoutLog';
 import WeightInputForm from './components/weight/WeightInputForm';
 import MeasurementInputForm from './components/bodyMeasurement/MeasurementInputForm';
 import GoalSettingForm from './components/GoalSettingForm'
+import VideoList from './components/visualTraining/VideoList';
+import VideoPlayer from './components/visualTraining/VideoPlayer';
 import { useUser } from './UserContext'; 
 
 function App() {
@@ -25,6 +27,8 @@ function App() {
           <Route path="/add-weight" element={<WeightInputForm userId={userId} />} />
           <Route path="/body-measurement" element={<MeasurementInputForm userId={userId} />} />
           <Route path="/goal" element={<GoalSettingForm userId={userId} />} />
+          <Route path="/visual" element={<VideoList />} />
+          <Route path="/visual/:videoID" element={<VideoPlayer />} />
           <Route path="*" element={<MainRoutes />} />
         </Routes>
       </BrowserRouter>
@@ -46,6 +50,8 @@ function MainRoutes() {
         <Route path="/add-weight" element={<WeightInputForm />} />
         <Route path="/body-measurement" element={<MeasurementInputForm />} />
         <Route path="/goal" element={<GoalSettingForm />} />
+        <Route path="/visual" element={<VideoList />} />
+        <Route path="/visual/:videoID" element={<VideoPlayer />} />
       </Routes>
     </>
   );
