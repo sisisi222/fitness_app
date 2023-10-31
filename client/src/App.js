@@ -10,6 +10,8 @@ import MeasurementInputForm from './components/bodyMeasurement/MeasurementInputF
 import GoalSettingForm from './components/GoalSettingForm'
 import VideoList from './components/visualTraining/VideoList';
 import VideoPlayer from './components/visualTraining/VideoPlayer';
+import BMICalculator from './components/nutrition/BMICalculator';
+import DailyFoodLog from './components/nutrition/DailyFoodLog';
 import { useUser } from './UserContext'; 
 
 function App() {
@@ -30,6 +32,8 @@ function App() {
           <Route path="/visual" element={<VideoList />} />
           <Route path="/visual/:videoID" element={<VideoPlayer />} />
           <Route path="*" element={<MainRoutes />} />
+          <Route path="/bmi" element={<BMICalculator userId={userId} />} />
+          <Route path="/food-log" element={<DailyFoodLog userId={userId} />} />
         </Routes>
       </BrowserRouter>
     </div>
@@ -52,6 +56,8 @@ function MainRoutes() {
         <Route path="/goal" element={<GoalSettingForm />} />
         <Route path="/visual" element={<VideoList />} />
         <Route path="/visual/:videoID" element={<VideoPlayer />} />
+        <Route path="/bmi" element={<BMICalculator />} />
+        <Route path="/food-log" element={<DailyFoodLog />} />
       </Routes>
     </>
   );

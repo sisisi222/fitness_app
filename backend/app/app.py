@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, abort
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
@@ -8,6 +8,7 @@ from datetime import datetime, timedelta, date
 from sqlalchemy import and_, or_
 from apscheduler.schedulers.background import BackgroundScheduler
 import logging
+import requests
 
 logging.basicConfig(level=logging.INFO)
 
@@ -199,6 +200,57 @@ class Goal(db.Model):
             'start_date': self.start_date,
             'end_date': self.end_date,
             'auto_continue': self.auto_continue
+        }
+
+class Food(db.Model):
+    __tablename__ = 'foods'
+    food_id = db.Column(db.Integer, primary_key=True)
+    food_name = db.Column(db.String(255), nullable=False)
+    calories_per_100g = db.Column(db.Integer, nullable=False)
+
+    def serialize(self):
+        return {
+            'food_id': self.food_id,
+            'food_name': self.food_name,
+            'calories_per_100g': self.calories_per_100g
+        }
+
+class FoodLog(db.Model):
+    __tablename__ = 'food_log'
+    log_id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    daily_total_calories = db.Column(db.Integer, nullable=False)
+    log_date = db.Column(db.Date, default=db.func.current_date())
+
+    user = db.relationship('User', backref=db.backref('food_logs', cascade='all, delete'))
+
+    def serialize(self):
+        return {
+            'log_id': self.log_id,
+            'user_id': self.user_id,
+            'daily_total_calories': self.daily_total_calories,
+            'log_date': self.log_date.isoformat() if self.log_date else None
+        }
+
+class UserBMI(db.Model):
+    __tablename__ = 'user_bmi'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    weight_lbs = db.Column(db.Float, nullable=False)  # weight in pounds
+    height_in = db.Column(db.Float, nullable=False)   # height in inches
+    bmi_value = db.Column(db.Float, nullable=False)
+    bmi_status = db.Column(db.String(50), nullable=False)  # e.g., Underweight, Healthy Weight, etc.
+    date_recorded = db.Column(db.Date, default=db.func.current_date())
+    
+    def serialize(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'weight_lbs': self.weight_lbs,
+            'height_in': self.height_in,
+            'bmi_value': self.bmi_value,
+            'bmi_status': self.bmi_status,
+            'date_recorded': self.date_recorded
         }
 
 # Routes
@@ -729,22 +781,29 @@ def toggle_auto_continue(goal_id):
 
 @app.route('/api/goals/<int:user_id>', methods=['GET'])
 def get_goals(user_id):
+    all_goals = request.args.get('all') == 'true'
     current_date = datetime.today().date()
-    goals = Goal.query.filter(
-        Goal.user_id == user_id,
-        Goal.start_date <= current_date,
-        Goal.end_date >= current_date
-    ).all()
+    
+    query = Goal.query.filter(Goal.user_id == user_id)
+    if not all_goals:
+        query = query.filter(Goal.start_date <= current_date, Goal.end_date >= current_date)
+    
+    goals = query.all()
     return jsonify([goal.serialize() for goal in goals])
 
 def get_active_goal(user_id, exercise_type_id):
-    current_date = datetime.today().date()
-    return Goal.query.filter(
-        Goal.user_id == user_id, 
-        Goal.exercise_type_id == exercise_type_id,
-        Goal.start_date <= current_date,
-        Goal.end_date >= current_date
-    ).first()
+    try:
+        # Fetch the active goals for the user
+        response = requests.get(f'http://localhost:5000/api/goals/{user_id}?all=false')
+        goals = response.json()
+        # Filter the goals based on exercise type
+        for goal in goals:
+            if goal['exercise_type_id'] == exercise_type_id:
+                return goal
+        return None
+    except Exception as e:
+        print("Error fetching active goal:", e)
+        return None
 
 @app.route('/api/progress/<int:user_id>', methods=['GET'])
 def get_progress(user_id):
@@ -762,24 +821,24 @@ def get_progress(user_id):
     if aerobic_goal:
         aerobic_workouts = Workout.query.filter(
             Workout.user_id == user_id, 
-            Workout.date >= aerobic_goal.start_date, 
-            Workout.date <= aerobic_goal.end_date,
+            Workout.date >= aerobic_goal['start_date'],  # Access values using keys
+            Workout.date <= aerobic_goal['end_date'],    # Access values using keys
             Workout.exercise_type_id == 1
         ).all()
 
     if cardio_goal:
         cardio_workouts = Workout.query.filter(
             Workout.user_id == user_id, 
-            Workout.date >= cardio_goal.start_date, 
-            Workout.date <= cardio_goal.end_date,
+            Workout.date >= cardio_goal['start_date'],  # Access values using keys
+            Workout.date <= cardio_goal['end_date'],    # Access values using keys
             Workout.exercise_type_id == 2
         ).all()
 
     if weight_goal:
         weight_workouts = Workout.query.filter(
             Workout.user_id == user_id, 
-            Workout.date >= weight_goal.start_date, 
-            Workout.date <= weight_goal.end_date,
+            Workout.date >= weight_goal['start_date'],  # Access values using keys
+            Workout.date <= weight_goal['end_date'],    # Access values using keys
             Workout.exercise_type_id == 3
         ).all()
 
@@ -794,13 +853,14 @@ def get_progress(user_id):
         'weight_sessions': weight_sessions
     })
 
+
 @app.route('/api/completion/<int:user_id>', methods=['GET'])
 def get_completion(user_id):
     try:
-        # Fetch user's goals
-        aerobic_goal = Goal.query.filter_by(user_id=user_id, exercise_type_id=1).first()
-        cardio_goal = Goal.query.filter_by(user_id=user_id, exercise_type_id=2).first()
-        weight_goal = Goal.query.filter_by(user_id=user_id, exercise_type_id=3).first()
+        # Fetch user's active goals
+        aerobic_goal = get_active_goal(user_id, 1)
+        cardio_goal = get_active_goal(user_id, 2)
+        weight_goal = get_active_goal(user_id, 3)
 
         # Fetch user's progress for this week
         progress_data = get_progress(user_id).get_json()
@@ -811,9 +871,9 @@ def get_completion(user_id):
         weight_sessions = progress_data['weight_sessions']
 
         # Calculate completion percentages
-        aerobic_completion = round((aerobic_duration / (aerobic_goal.goal_value if aerobic_goal else 1)) * 100, 1)
-        cardio_completion = round((cardio_sessions / (cardio_goal.goal_value if cardio_goal else 1)) * 100, 1)
-        weight_completion = round((weight_sessions / (weight_goal.goal_value if weight_goal else 1)) * 100, 1)
+        aerobic_completion = round((aerobic_duration / (aerobic_goal['goal_value'] if aerobic_goal else 1)) * 100, 1)
+        cardio_completion = round((cardio_sessions / (cardio_goal['goal_value'] if cardio_goal else 1)) * 100, 1)
+        weight_completion = round((weight_sessions / (weight_goal['goal_value'] if weight_goal else 1)) * 100, 1)
 
         return jsonify({
             'aerobic_completion': min(100, aerobic_completion),  # Cap completion at 100%
@@ -823,6 +883,7 @@ def get_completion(user_id):
 
     except Exception as e:
         return jsonify({'message': 'Error calculating completion: ' + str(e)}), 500
+
 
 @app.route('/api/goals/<int:goal_id>', methods=['DELETE'])
 def delete_goal(goal_id):
@@ -834,8 +895,100 @@ def delete_goal(goal_id):
     return jsonify({'message': 'Goal deleted successfully!'}), 200
 
 
+# FOR NUTRITION
+
+@app.route('/api/add_bmi_lbs_in', methods=['POST'])
+def add_bmi():
+    if not request.is_json:
+        abort(400, description="Request body must be JSON")
+
+    data = request.get_json()
+
+    print("Data received:", data)  # <- here you print the incoming data immediately after receiving it
+
+    # Ensure necessary data is present
+    if not all(key in data for key in ['user_id', 'weight_lbs', 'height_in']):
+        abort(400, description="Missing required fields in JSON data")
+
+    try:
+        user_id = int(data['user_id'])
+        weight_lbs = float(data['weight_lbs'])
+        height_in = float(data['height_in'])
+    except ValueError:
+        abort(400, description="Invalid value format in JSON data")
+
+    # Calculate BMI
+    bmi_value = (weight_lbs / (height_in*height_in*12*12)) * 703
+
+    print(f"Calculated BMI value: {bmi_value}")  # <- print the calculated BMI
+
+    # Determine BMI status
+    if bmi_value < 18.5:
+        bmi_status = "Underweight"
+    elif 18.5 <= bmi_value <= 24.9:
+        bmi_status = "Healthy Weight"
+    elif 25.0 <= bmi_value <= 29.9:
+        bmi_status = "Overweight"
+    else:
+        bmi_status = "Obesity"
+
+    print(f"Assigned BMI status: {bmi_status}")  # <- print the BMI status
+
+    new_bmi = UserBMI(
+        user_id=user_id,
+        weight_lbs=weight_lbs,
+        height_in=height_in,
+        bmi_value=bmi_value,
+        bmi_status=bmi_status
+    )
+
+    try:
+        db.session.add(new_bmi)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error during DB operations: {e}")  # <- print any error during DB operations
+        abort(500, description=f"Database error: {e}")
+
+    print("Data successfully saved to DB.")  # <- print after successful save
+
+    return jsonify(new_bmi.serialize())
+
+@app.route('/api/get_bmi_by_user/<int:user_id>', methods=['GET'])
+def get_bmi_by_user(user_id):
+    bmi_records = UserBMI.query.filter_by(user_id=user_id).all()
+    return jsonify([record.serialize() for record in bmi_records])
+
+@app.route('/api/get_all_foods', methods=['GET'])
+def get_all_foods():
+    foods = Food.query.all()
+    return jsonify([food.serialize() for food in foods])
+
+@app.route('/api/log_user_food', methods=['POST'])
+def log_user_food():
+    user_id = request.json.get('user_id')
+    entries = request.json.get('entries')
+    today = date.today()
+
+    total_calories = sum([(entry['calories_per_100g'] * entry['quantity_g']) / 100 for entry in entries])
+
+    existing_log = FoodLog.query.filter_by(user_id=user_id, log_date=today).first()
+    if existing_log:
+        existing_log.daily_total_calories += total_calories
+    else:
+        new_log = FoodLog(user_id=user_id, daily_total_calories=total_calories)
+        db.session.add(new_log)
+
+    db.session.commit()
+    return jsonify({"message": "Entries logged successfully!"})
+
+@app.route('/api/get_todays_calories/<int:user_id>', methods=['GET'])
+def get_todays_calories(user_id):
+    today = date.today()
+    log = FoodLog.query.filter_by(user_id=user_id, log_date=today).first()
+    total_calories = log.daily_total_calories if log else 0
+    return jsonify({'total_calories': total_calories})
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
-
-
 

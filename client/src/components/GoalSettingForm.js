@@ -14,20 +14,30 @@ function GoalSettingForm({ userId }) {
     // Extracted fetching function
     const fetchGoals = async () => {
         try {
-            const response = await axios.get(`http://localhost:5000/api/goals/${userId}`);
+            const response = await axios.get(`http://localhost:5000/api/goals/${userId}?all=true`);
             console.log("Server Response:", response.data);
             setExistingGoals(response.data);
         } catch (error) {
             console.error("Error fetching goals", error);
         }
-    };
+    };    
 
     useEffect(() => {
         if (userId) {
             fetchGoals();
         }
-        
+        fetchAllGoals();
     }, [userId]);
+
+    const fetchAllGoals = async () => {
+        try {
+            const response = await axios.get('http://localhost:5000/api/goals/${userId}');
+            console.log("All goals:", response.data);
+            setExistingGoals(response.data);
+        } catch (error) {
+            console.error("Error fetching all goals", error);
+        }
+    };
 
     const getExerciseTypeName = (typeId) => {
         // Adjusted the type IDs to be numbers instead of strings.
@@ -115,27 +125,6 @@ function GoalSettingForm({ userId }) {
         }
     };
     
-    // const handleAutoContinueToggle = async (goalId) => {
-    //     try {
-    //         const goal = existingGoals.find(g => g.id === goalId);
-    //         const updatedAutoContinueStatus = !goal.auto_continue;
-    //         await axios.put(`http://localhost:5000/api/goals/${goalId}`, {
-    //             auto_continue: updatedAutoContinueStatus
-    //         });
-    //         fetchGoals();  // Refresh goals after toggling auto_continue
-    //     } catch (error) {
-    //         console.error('Error updating auto-continue status', error);
-    //         alert('Failed to update auto-continue status.');
-    //     }
-    // };
-    
-    // function formatDate(dateString) {
-    //     // Adjusted the function for more accurate and simple formatting.
-    //     const [year, month, day] = dateString.split('-');
-    //     const dateObj = new Date(year, month - 1, day); // Month is 0-indexed
-    //     const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
-    //     return dateObj.toLocaleDateString('en-US', options);
-    // }
     function formatDate(dateString) {
         if (!dateString) {
             return 'Invalid Date';
@@ -244,7 +233,39 @@ function GoalSettingForm({ userId }) {
                     </tbody>
                 </table>
             </div>
+
+            <div className="all-goals">
+                <h3>All Goals in the Database</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>User ID</th>
+                            <th>Exercise Type</th>
+                            <th>Goal Metric</th>
+                            <th>Goal Value</th>
+                            <th>Start Date</th>
+                            <th>End Date</th>
+                            <th>Auto-Continue</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {existingGoals.map(goal => (
+                            <tr key={goal.id}>
+                                <td>{goal.user_id}</td>
+                                <td>{getExerciseTypeName(goal.exercise_type_id)}</td>
+                                <td>{goal.goal_metric}</td>
+                                <td>{goal.goal_value} {goal.goal_metric === 'Duration' ? 'hours' : 'sessions'}</td>
+                                <td>{formatDate(goal.start_date)}</td>
+                                <td>{formatDate(goal.end_date)}</td>
+                                <td>{goal.auto_continue ? 'Yes' : 'No'}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
         </div>
+
+        
     );       
 }
 
