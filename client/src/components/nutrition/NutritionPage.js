@@ -1,99 +1,72 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
-function DailyFoodLog({ userId }) {
-  const [foods, setFoods] = useState([]);
-  const [selectedFoods, setSelectedFoods] = useState([]);
-  const [totalCalories, setTotalCalories] = useState(0);
+const BMICalculator = ({ userId }) => {
+    const [weight, setWeight] = useState('');
+    const [height, setHeight] = useState('');
+    const [bmi, setBMI] = useState(null);
+    const [status, setStatus] = useState('');
+    const [bmiRecords, setBmiRecords] = useState([]); // New state for storing all BMI records
 
-  useEffect(() => {
-    fetch('http://localhost:5000/api/get_all_foods')
-      .then(response => response.json())
-      .then(data => setFoods(data))
-      .catch(error => console.error('Error:', error));
-  }, []);
+    useEffect(() => {
+        // Fetch existing BMI data when the component is mounted
+        const fetchBmiData = async () => {
+            const response = await axios.get(`http://localhost:5000/api/get_bmi_by_user/${userId}`);
+            setBmiRecords(response.data);
+        };
 
-  const handleFoodSelection = (food, quantity) => {
-    const existingFood = selectedFoods.find(f => f.food_id === food.food_id);
-    if (existingFood) {
-      existingFood.quantity = parseInt(quantity, 10);
-    } else {
-      const updatedFoods = [...selectedFoods, { ...food, quantity: parseInt(quantity, 10) }];
-      setSelectedFoods(updatedFoods);
-    }
-    calculateTotalCalories();
-  };
+        fetchBmiData();
+    }, [userId]);
 
-  const calculateTotalCalories = () => {
-    const total = selectedFoods.reduce((acc, food) => {
-      return acc + (food.calories_per_100g * food.quantity) / 100;
-    }, 0);
-    setTotalCalories(total);
-  };
+    const calculateBMI = async () => {
+        const response = await axios.post('http://localhost:5000/api/add_bmi_lbs_in', {
+            user_id: userId,
+            weight_lbs: weight,
+            height_in: height
+        }, {
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
 
-  const saveFoodLog = () => {
-    const entries = selectedFoods.map(food => ({
-      food_id: food.food_id,
-      quantity_g: food.quantity,
-      calories_per_100g: food.calories_per_100g
-    }));
+        const result = response.data;
+        setBMI(result.bmi_value);
+        setStatus(result.bmi_status);
+        setBmiRecords(prevRecords => [...prevRecords, result]); // Add new record to the list
+    };
 
-    fetch('http://localhost:5000/api/log_user_food', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ user_id: userId, entries: entries })
-    })
-    .then(response => response.json())
-    .then(data => {
-      if(data.message === "Entries logged successfully!") {
-        alert('Food logged successfully');
-        setSelectedFoods([]);
-      } else {
-        alert('Error logging food');
-      }
-    })
-    .catch(error => console.error('Error:', error));
-  };
+    return (
+        <div>
+            <h2>BMI Calculator</h2>
+            <div>
+                <label>Weight (lbs): </label>
+                <input type="number" value={weight} onChange={(e) => setWeight(e.target.value)} />
+            </div>
+            <div>
+                <label>Height (inches): </label>
+                <input type="number" value={height} onChange={(e) => setHeight(e.target.value)} />
+            </div>
+            <button onClick={calculateBMI}>Calculate</button>
 
-  const handleDoneClick = () => {
-    if (selectedFoods.some(food => food.quantity <= 0)) {
-      alert('Please ensure all selected food quantities are positive!');
-      return;
-    }
-    saveFoodLog();
-  };
+            {bmi && (
+                <div>
+                    <p>Your BMI: {bmi}</p>
+                    <p>Status: {status}</p>
+                </div>
+            )}
 
-  return (
-    <div>
-      <h2>Select Foods</h2>
-      {foods.map(food => (
-        <div key={food.food_id}>
-          {food.food_name}
-          <input 
-            type="number" 
-            placeholder="Quantity in grams"
-            onChange={(e) => handleFoodSelection(food, e.target.value)} 
-          />
+            <h3>Your BMI Records:</h3>
+            <ul>
+                {bmiRecords.map(record => (
+                    <li key={record.id}>
+                        Date: {new Date(record.date_recorded).toISOString().split('T')[0]}, 
+                        BMI: {record.bmi_value.toFixed(2)}, 
+                        Status: {record.bmi_status}
+                    </li>
+                ))}
+            </ul>
         </div>
-      ))}
-      <button onClick={handleDoneClick}>Done</button>
-      <div>
-        <h3>Total Calories for Today</h3>
-        {totalCalories.toFixed(2)}
-      </div>
-      <div>
-        <h3>Selected Foods:</h3>
-        <ul>
-          {selectedFoods.map(food => (
-            <li key={food.food_id}>
-              {food.food_name} - {food.quantity}g
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
-  );
-}
+    );
+};
 
-export default DailyFoodLog;
+export default BMICalculator;

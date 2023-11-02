@@ -74,8 +74,12 @@ function GoalSettingForm({ userId }) {
                 await axios.put(`http://localhost:5000/api/goals/${matchingGoal.id}`, data);
                 alert('Goal updated successfully!');
             } else {
-                await axios.post('http://localhost:5000/api/goals', data);
-                alert('Goal set successfully!');
+                const response = await axios.post('http://localhost:5000/api/goals', data);
+                if (response.status === 201) {
+                    // Goal added successfully, update the local state
+                    setExistingGoals([...existingGoals, data]);
+                    alert('Goal set successfully!');
+                }
             }
     
             setSubmittedData(data);
@@ -85,6 +89,7 @@ function GoalSettingForm({ userId }) {
             alert('Failed to set/update goal.');
         }
     };
+    
     
     const handleDelete = async (goalId) => {
         try {
@@ -145,8 +150,6 @@ function GoalSettingForm({ userId }) {
         const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
         return dateObj.toLocaleDateString('en-US', options);
     }
-    
-    
     
 
     return (
