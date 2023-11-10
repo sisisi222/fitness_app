@@ -1,28 +1,59 @@
+/* Home.css */
+
 .home-container {
-    font-family: Arial, sans-serif;
-    /* background-color: #ee0000; */
-    display: block; /* Ensures it's a block-level element */
-    width: 100vw;
-    box-sizing: border-box; /* Ensures padding and border are included in the total width */
+    font-family: 'Arial', sans-serif;
+    color: #333;
+    line-height: 1.6;
+}
+
+.welcome-section {
+    text-align: center;
+    padding: 50px 20px;
+    background: #f4f4f4;
+    margin: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.welcome-section h2 {
+    color: #0099FF;
+}
+
+.welcome-section h1 {
+    margin: 20px 0;
+    font-size: 2.5rem;
+    color: #333;
 }
 
 .user-options {
-    padding: 20px;
-    border: 1px solid #007BFF;
-    border-radius: 10px;
-    margin: 20px 0;
-    text-align: center;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 30px;
 }
 
-.user-options a {
-    font-size: 60px;
-    color: #007BFF;
+.option-link {
+    background: #0099FF;
+    color: white;
+    padding: 15px 25px;
+    border-radius: 4px;
     text-decoration: none;
-    padding: 10px;
-    display: block; /* Makes the entire area clickable */
-    margin: 10px 0;
+    transition: background-color 0.3s;
 }
 
-.user-options a:hover {
-    background-color: #e8e8e8; /* Adds a hover effect to the links */
+.option-link a {
+    text-decoration: none;
+    color: white;
+    font-weight: bold;
 }
+
+.option-link:hover {
+    background: #4cae4c;
+}
+
+p {
+    margin-top: 30px;
+    color: #777;
+}
+

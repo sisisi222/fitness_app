@@ -978,16 +978,22 @@ def log_user_food():
     else:
         new_log = FoodLog(user_id=user_id, daily_total_calories=total_calories)
         db.session.add(new_log)
-
     db.session.commit()
+
     return jsonify({"message": "Entries logged successfully!"})
 
 @app.route('/api/get_todays_calories/<int:user_id>', methods=['GET'])
 def get_todays_calories(user_id):
     today = date.today()
+    formatted_date = today.strftime('%m-%d-%Y')
     log = FoodLog.query.filter_by(user_id=user_id, log_date=today).first()
     total_calories = log.daily_total_calories if log else 0
-    return jsonify({'total_calories': total_calories})
+    return jsonify({'Date': formatted_date, 'Total Calories': total_calories})
+
+@app.route('/api/get_all_food_logs/<int:user_id>', methods=['GET'])
+def get_all_food_logs(user_id):
+    logs = FoodLog.query.filter_by(user_id=user_id).all()
+    return jsonify([log.serialize() for log in logs])
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

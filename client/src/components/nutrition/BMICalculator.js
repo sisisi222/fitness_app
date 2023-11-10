@@ -70,12 +70,22 @@ const BMICalculator = ({ userId }) => {
                 title: {
                     display: true,
                     text: 'Date'
+                },
+                ticks: {
+                    font: {
+                      size: 30, 
+                    }
                 }
             },
             y: {
                 title: {
                     display: true,
                     text: 'BMI'
+                },
+                ticks: {
+                    font: {
+                      size: 30, 
+                    }
                 }
             }
         }

@@ -16,29 +16,36 @@ function Home({ userId }) {
                     <h2>Welcome to FlexiFitness!</h2>
                     <h1>What would you like to do today?</h1>
                     <div className="user-options">
-                        <div className='option-link'>
-                            <Link to="/workouts">Add/Edit a new workout</Link>
-                        </div>
-                        <div className='option-link'>
-                            <Link to="/add-weight">Add/Edit Your Weight</Link>
-                        </div>
-                        <div className='option-link'>
-                            <Link to="/body-measurement">Add/Edit Your Body Measurement</Link>
-                        </div>
+                        
                         <div className='option-link'>
                             <Link to="/Goal">Add Your Goal</Link>
                         </div>
+
+                        <div className='option-link'>
+                            <Link to="/workouts">Add/Edit a new workout</Link>
+                        </div>
+
+                        <div className='option-link'>
+                            <Link to="/add-weight">Add/Edit Your Weight</Link>
+                        </div>
+
+                        <div className='option-link'>
+                            <Link to="/body-measurement">Add/Edit Your Body Measurement</Link>
+                        </div>
+    
                         <div className='option-link'>
                             <Link to="/visual">Video Instructions</Link>
                         </div>
+
                         <div className='option-link'>
                             <Link to="/bmi">Calculate Your BMI</Link>
                         </div>
+
                         <div className='option-link'>
                             <Link to="/food-log">Track Your Food Calories</Link>
                         </div>
                     </div>
-                    <p>Thank you for using our app!</p>
+                    <h3>Thank you for using our app!</h3>
                 </div>
             </div>
         );
