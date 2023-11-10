@@ -14,6 +14,29 @@ function DailyFoodLog({ userId }) {
   const [selectedFoods, setSelectedFoods] = useState([]);
   const [totalCalories, setTotalCalories] = useState(0);
   const [foodLogs, setFoodLogs] = useState([]);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editFoodId, setEditFoodId] = useState(null);
+  const [editQuantity, setEditQuantity] = useState('');
+
+  const handleEditFood = (foodId, currentQuantity) => {
+    setIsEditing(true);
+    setEditFoodId(foodId);
+    setEditQuantity(currentQuantity.toString());
+  };
+
+  const handleUpdateFoodQuantity = () => {
+    const updatedFoods = selectedFoods.map(food => {
+      if (food.food_id === editFoodId) {
+        return { ...food, quantity: parseInt(editQuantity, 10) };
+      }
+      return food;
+    });
+
+    setSelectedFoods(updatedFoods);
+    setIsEditing(false);
+    setEditFoodId(null);
+    setEditQuantity('');
+  };
 
   useEffect(() => {
     fetch('http://localhost:5000/api/get_all_foods')
@@ -179,9 +202,21 @@ function DailyFoodLog({ userId }) {
           {selectedFoods.map(food => (
             <li key={food.food_id}>
               {food.food_name} - {food.quantity}g
+              <button onClick={() => handleEditFood(food.food_id, food.quantity)}>Edit</button>
             </li>
           ))}
         </ul>
+
+        {isEditing && (
+          <div>
+            <input 
+              type="number" 
+              value={editQuantity} 
+              onChange={(e) => setEditQuantity(e.target.value)} 
+            />
+            <button onClick={handleUpdateFoodQuantity}>Update Quantity</button>
+          </div>
+        )}
       </div>
       
       <div>

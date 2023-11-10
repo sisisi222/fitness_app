@@ -995,6 +995,20 @@ def get_all_food_logs(user_id):
     logs = FoodLog.query.filter_by(user_id=user_id).all()
     return jsonify([log.serialize() for log in logs])
 
+@app.route('/api/update_user_food', methods=['POST'])
+def update_user_food():
+    user_id = request.json.get('user_id')
+    food_id = request.json.get('food_id')
+    new_quantity = request.json.get('new_quantity')
+    today = date.today()
+
+    log_entry = FoodLog.query.filter_by(user_id=user_id, log_date=today, food_id=food_id).first()
+    if log_entry:
+        log_entry.quantity = new_quantity
+        db.session.commit()
+        return jsonify({"message": "Entry updated successfully!"})
+    else:
+        return jsonify({"message": "No entry found for today."}), 404
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
-
