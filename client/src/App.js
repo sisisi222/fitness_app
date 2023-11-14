@@ -12,6 +12,11 @@ import VideoList from './components/visualTraining/VideoList';
 import VideoPlayer from './components/visualTraining/VideoPlayer';
 import BMICalculator from './components/nutrition/BMICalculator';
 import DailyFoodLog from './components/nutrition/DailyFoodLog';
+import CreateDiscussionTopic from './components/discussion/CreateDiscussionTopic';
+import DiscussionList from './components/discussion/DiscussionList';
+import DiscussionTopicDetail from './components/discussion/DiscussionTopicDetail';
+import FeedBack from './components/feedback/FeedBack'
+
 import { useUser } from './UserContext'; 
 
 function App() {
@@ -34,6 +39,12 @@ function App() {
           <Route path="*" element={<MainRoutes />} />
           <Route path="/bmi" element={<BMICalculator userId={userId} />} />
           <Route path="/food-log" element={<DailyFoodLog userId={userId} />} />
+          <Route path="/discussion" element={<DiscussionList />} />
+          <Route path="/discussion/create" element={<CreateDiscussionTopic userId={userId} />} />
+          <Route path="/discussion/:id" element={<DiscussionTopicDetail userId={userId} />} />
+          <Route path="/feedback" element={<FeedBack userId={userId} />} />
+          
+
         </Routes>
       </BrowserRouter>
     </div>
@@ -58,6 +69,11 @@ function MainRoutes() {
         <Route path="/visual/:videoID" element={<VideoPlayer />} />
         <Route path="/bmi" element={<BMICalculator />} />
         <Route path="/food-log" element={<DailyFoodLog />} />
+        <Route path="/discussion" element={<DiscussionList />} />
+        <Route path="/discussion/create" element={<CreateDiscussionTopic />} />
+        <Route path="/discussion/:id" element={<DiscussionTopicDetail />} />
+        <Route path="/feedback" element={<FeedBack />} />
+
       </Routes>
     </>
   );

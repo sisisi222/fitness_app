@@ -44,6 +44,11 @@ function Home({ userId }) {
                         <div className='option-link'>
                             <Link to="/food-log">Track Your Food Calories</Link>
                         </div>
+
+                        <div className='option-link'>
+                            <Link to="/discussion">Forum</Link>
+                        </div>
+
                     </div>
                     <h3>Thank you for using our app!</h3>
                 </div>

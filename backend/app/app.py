@@ -9,6 +9,7 @@ from sqlalchemy import and_, or_
 from apscheduler.schedulers.background import BackgroundScheduler
 import logging
 import requests
+from flask_migrate import Migrate
 
 logging.basicConfig(level=logging.INFO)
 
@@ -20,6 +21,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:fitness123@fitnes
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 bcrypt = Bcrypt(app)
 
 # Models
@@ -172,6 +174,48 @@ class BodyMeasurement(db.Model):
             'legs': self.legs,
             'hip': self.hip
         }
+
+class DiscussionTopic(db.Model):
+    __tablename__ = 'discussion_topic'
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Relationship to link the user who created the topic
+    creator = db.relationship('User', backref=db.backref('discussion_topics', lazy=True))
+
+    def serialize(self):
+        return {
+            'id': self.id,
+            'title': self.title,
+            'description': self.description,
+            'created_by': self.created_by,
+            'created_at': self.created_at.isoformat()
+        }
+
+class DiscussionComment(db.Model):
+    __tablename__ = 'discussion_comment'
+    id = db.Column(db.Integer, primary_key=True)
+    topic_id = db.Column(db.Integer, db.ForeignKey('discussion_topic.id'), nullable=False)
+    comment_text = db.Column(db.Text, nullable=False)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Relationships to link the comment to the user and the topic
+    creator = db.relationship('User', backref=db.backref('discussion_comments', lazy=True))
+    topic = db.relationship('DiscussionTopic', backref=db.backref('comments', lazy=True))
+
+    def serialize(self):
+        return {
+            'id': self.id,
+            'topic_id': self.topic_id,
+            'comment_text': self.comment_text,
+            'created_by': self.created_by,
+            'created_at': self.created_at.isoformat()
+        }
+
 
 # Enum type for goal metric
 GoalMetrics = ENUM('Duration', 'Sessions', name='goal_metrics', create_type=True)
@@ -1009,6 +1053,49 @@ def update_user_food():
         return jsonify({"message": "Entry updated successfully!"})
     else:
         return jsonify({"message": "No entry found for today."}), 404
+
+
+# FOR DISCUSSION
+@app.route('/api/discussion/topic/create', methods=['POST'])
+def create_discussion_topic():
+    data = request.json
+    new_topic = DiscussionTopic(
+        title=data['title'],
+        description=data['description'],
+        created_by=data['user_id']
+    )
+    db.session.add(new_topic)
+    db.session.commit()
+    return jsonify({'message': 'Topic created successfully', 'topic_id': new_topic.id})
+
+# Endpoint to create a comment on a discussion topic
+@app.route('/api/discussion/comment/create', methods=['POST'])
+def create_discussion_comment():
+    data = request.json
+    new_comment = DiscussionComment(
+        topic_id=data['topic_id'],
+        comment_text=data['comment_text'],
+        created_by=data.get('user_id')
+    )
+    db.session.add(new_comment)
+    db.session.commit()
+    return jsonify({'message': 'Comment added successfully', 'comment_id': new_comment.id})
+
+# Fetch all discussion topics
+@app.route('/api/discussion/topics', methods=['GET'])
+def get_discussion_topics():
+    topics = DiscussionTopic.query.all()
+    return jsonify([topic.serialize() for topic in topics])
+
+# Fetch a specific discussion topic and its comments
+@app.route('/api/discussion/topic/<int:topic_id>', methods=['GET'])
+def get_discussion_topic(topic_id):
+    topic = DiscussionTopic.query.get(topic_id)
+    comments = DiscussionComment.query.filter_by(topic_id=topic_id).all()
+    return jsonify({
+        'topic': topic.serialize(),
+        'comments': [comment.serialize() for comment in comments]
+    })
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
