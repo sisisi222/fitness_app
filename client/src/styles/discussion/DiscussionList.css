@@ -1,0 +1,58 @@
+.discussion-list-container {
+    font-family: 'Arial', sans-serif;
+    color: #333;
+    line-height: 1.6;
+    margin: 20px;
+    padding: 20px;
+    border-radius: 8px;
+    background: #f4f4f4;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.discussion-list-container h2 {
+    text-align: center;
+    color: #0099FF;
+    margin-bottom: 20px;
+}
+
+.discussion-create-link {
+    display: inline-block;
+    background: #0099FF;
+    color: white;
+    padding: 15px 25px;
+    border-radius: 4px;
+    text-decoration: none;
+    transition: background-color 0.3s;
+    margin-bottom: 30px;
+}
+
+.discussion-create-link:hover {
+    background: #4cae4c;
+}
+
+.discussion-topics-list {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+}
+
+.discussion-topics-list li {
+    background: #0099FF;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 4px;
+    transition: background-color 0.3s;
+}
+
+.discussion-topics-list li a {
+    text-decoration: none;
+    color: white;
+    font-weight: bold;
+}
+
+.discussion-topics-list li:hover {
+    background: #4cae4c;
+}

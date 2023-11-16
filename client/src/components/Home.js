@@ -50,7 +50,9 @@ function Home({ userId }) {
                         </div>
 
                     </div>
+
                     <h3>Thank you for using our app!</h3>
+                    <h3>Please give us any feedback to improve our experience</h3>
                 </div>
             </div>
         );
