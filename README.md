@@ -16,32 +16,37 @@ Welcome to the Fitness Tracker website! This is one of my personal projects. Thi
 1. **User Registration and Authentication**
    - Users can create accounts and log in securely.
    - Passwords are hashed and stored securely.
+     <img width="389" alt="image" src="https://github.com/sisisi222/fitness_app/assets/116410481/7ad6b381-5b5c-431e-a66d-e8538780600c">
+     <img width="376" alt="image" src="https://github.com/sisisi222/fitness_app/assets/116410481/908304d8-bd0a-48a2-af18-866ab0c1b338">
 
 2. **Manual Workout Logging**
    - Users can log their workouts, including exercise details, duration, and date.
+     <img width="1512" alt="image" src="https://github.com/sisisi222/fitness_app/assets/116410481/c23e2423-a0f6-4dd3-babe-fd79d8625b7f">
+
 
 3. **Visual Progress Tracking**
    - Users can view their fitness progress through graphs and charts.
    - Track metrics such as weight, body measurements, and workout history.
+     <img width="1512" alt="image" src="https://github.com/sisisi222/fitness_app/assets/116410481/2d6a9f87-2b6c-40ed-9b3c-d3f4f7ad1d71">
 
 4. **Personalized Goal Setting**
    - Users can set fitness goals and track their progress towards achieving them.
+     <img width="1512" alt="image" src="https://github.com/sisisi222/fitness_app/assets/116410481/c24a958c-49fe-4734-a3b9-ee67773c213b">
+     <img width="1512" alt="image" src="https://github.com/sisisi222/fitness_app/assets/116410481/2391a977-e61e-4021-9de2-e3fd323d2d4f">
 
 ### Additional Features 
 
 5. **Virtual Personal Trainer**
    - Incorporate a virtual personal trainer feature to provide workout recommendations and tips.
+     <img width="1512" alt="image" src="https://github.com/sisisi222/fitness_app/assets/116410481/3315ec6f-a8b7-41dd-94c9-c05c8c4a95fc">
 
-6. **Achievements and Badges System**
-   - Implement a system that rewards users with achievements and badges based on their fitness milestones and accomplishments.
-
-7. **Nutritional Tracking**
+6. **Nutritional Tracking**
    - Add the ability for users to track their daily nutritional intake, including calories, macronutrients, and micronutrients.
+     <img width="1512" alt="image" src="https://github.com/sisisi222/fitness_app/assets/116410481/d146603c-d981-45f8-84ae-482d6284089f">
 
-8. **User Profile**
-   - User are welcome to upload avatar picture and post status
-
-   <img width="1366" alt="image" src="https://github.com/sisisi222/fitness_app/assets/116410481/ad38c43e-422d-4afe-a21f-b3516349d2a4">
+7. **User Profile**
+   - Users are welcome to upload avatar pictures and post status
+     <img width="1366" alt="image" src="https://github.com/sisisi222/fitness_app/assets/116410481/ad38c43e-422d-4afe-a21f-b3516349d2a4">
 
 ## Technologies Used
 
