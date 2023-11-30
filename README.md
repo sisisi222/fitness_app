@@ -16,6 +16,7 @@ Welcome to the Fitness Tracker website! This is one of my personal projects. Thi
 1. **User Registration and Authentication**
    - Users can create accounts and log in securely.
    - Passwords are hashed and stored securely.
+     
      <img width="389" alt="image" src="https://github.com/sisisi222/fitness_app/assets/116410481/7ad6b381-5b5c-431e-a66d-e8538780600c">
      <img width="376" alt="image" src="https://github.com/sisisi222/fitness_app/assets/116410481/908304d8-bd0a-48a2-af18-866ab0c1b338">
 
