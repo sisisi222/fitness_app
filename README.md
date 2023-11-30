@@ -27,7 +27,7 @@ Welcome to the Fitness Tracker website! This is one of my personal projects. Thi
 4. **Personalized Goal Setting**
    - Users can set fitness goals and track their progress towards achieving them.
 
-### Additional Features (Time Permitting)
+### Additional Features 
 
 5. **Virtual Personal Trainer**
    - Incorporate a virtual personal trainer feature to provide workout recommendations and tips.
@@ -37,6 +37,11 @@ Welcome to the Fitness Tracker website! This is one of my personal projects. Thi
 
 7. **Nutritional Tracking**
    - Add the ability for users to track their daily nutritional intake, including calories, macronutrients, and micronutrients.
+
+8. **User Profile**
+   - User are welcome to upload avatar picture and post status
+
+   <img width="1366" alt="image" src="https://github.com/sisisi222/fitness_app/assets/116410481/ad38c43e-422d-4afe-a21f-b3516349d2a4">
 
 ## Technologies Used
 
